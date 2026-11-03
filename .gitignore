@@ -1,0 +1,22 @@
+# Gradle and Kotlin
+.gradle/
+.kotlin/
+build/
+
+# Local machine
+local.properties
+.idea/
+*.iml
+.DS_Store
+.claude/
+
+# Signing material: never commit these
+keystore/
+*.jks
+*.keystore
+keystore.properties
+
+# Build output
+dist/
+*.apk
+*.aab

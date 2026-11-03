@@ -1,0 +1,6 @@
+<resources>
+    <!-- Window-level theme only; all UI styling lives in Compose. Dark background avoids a white flash on launch. -->
+    <style name="Theme.GymPad" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/background</item>
+    </style>
+</resources>

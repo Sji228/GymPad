@@ -1,0 +1,168 @@
+package com.gympad.ui.strings
+
+import androidx.compose.runtime.staticCompositionLocalOf
+import com.gympad.data.Routine
+import com.gympad.domain.AppLanguage
+import com.gympad.domain.BuiltInNames
+import com.gympad.domain.LiftValue
+import com.gympad.domain.formatWeight
+import java.time.LocalDate
+
+val LocalStrings = staticCompositionLocalOf<AppStrings> { EnglishStrings }
+
+val AppLanguage.strings: AppStrings
+    get() = when (this) {
+        AppLanguage.ENGLISH -> EnglishStrings
+        AppLanguage.POLISH -> PolishStrings
+    }
+
+/**
+ * Every text in the app. A plain interface rather than resource files: a missing translation is a
+ * compile error, plurals are ordinary code, and switching language needs no restart.
+ */
+interface AppStrings {
+    val language: AppLanguage
+    val decimalSeparator: Char
+    val bodyweight: String
+
+    /** Monday first, like the ribbon. */
+    val weekdayNames: List<String>
+    val weekdayLetters: List<String>
+    val monthNames: List<String>
+
+    /** Polish changes a month's form inside a date: "listopad" but "1 listopada". */
+    val monthNamesInDate: List<String>
+    val monthNamesShort: List<String>
+
+    val today: String
+    val cancel: String
+    val back: String
+    val menu: String
+    val readOnly: String
+    val routines: String
+    val backup: String
+    val languageLabel: String
+    val history: String
+    val openHistory: String
+    val closeHistory: String
+    val legendComplete: String
+    val legendIncomplete: String
+    val legendRest: String
+    fun emptyRoutineTitle(routine: String): String
+    val emptyRoutineDetail: String
+    val restDayTitle: String
+    val restDayDetail: String
+    val notTrainedTitle: String
+    fun notTrainedDetail(routine: String): String
+    val addExercise: String
+
+    val removeSet: String
+    val addSet: String
+    val skipped: String
+    val collapse: String
+    val expand: String
+    val completed: String
+    fun editExercise(name: String): String
+    fun addVariantTo(name: String): String
+    val addVariant: String
+    val last: String
+    val personalRecord: String
+    val columnSet: String
+    val columnReps: String
+    fun repsValue(reps: Int): String
+    fun setsNotDone(count: Int): String
+    fun decreaseWeight(name: String, set: Int): String
+    fun increaseWeight(name: String, set: Int): String
+    fun weightField(name: String, set: Int): String
+    fun repsField(name: String, set: Int): String
+    fun completeSet(name: String, set: Int): String
+    fun undoSet(name: String, set: Int): String
+
+    val exerciseFallback: String
+    val variants: String
+    val variantsExplanation: String
+    val sets: String
+    val plannedSets: String
+    val fewerSets: String
+    val moreSets: String
+    val removeFromRoutine: String
+    val removeConfirm: String
+    val mainVariant: String
+    fun makeMain(name: String): String
+    fun renameVariant(name: String): String
+    fun removeVariant(name: String): String
+    val exerciseNamePlaceholder: String
+    val newVariantName: String
+    val saveVariant: String
+    val alreadyVariant: String
+    fun linksHistory(name: String): String
+    val renameKeepsHistory: String
+    fun addTo(routine: String): String
+    val newExerciseName: String
+
+    val routineNameLabel: String
+    fun routinePlaceholder(letter: String): String
+    val routineNameField: String
+    val exercisesLabel: String
+    fun setCount(count: Int): String
+    val alternativesPrefix: String
+    fun moveUp(name: String): String
+    fun moveDown(name: String): String
+
+    val exportTitle: String
+    val exportDetail: String
+    val importTitle: String
+    val importDetail: String
+    val replaceTitle: String
+    fun replaceDetail(summary: String): String
+    val replaceConfirm: String
+    fun workoutCount(count: Int): String
+    fun exported(summary: String): String
+    fun restored(summary: String): String
+    val exportFailed: String
+    val importFailed: String
+    val backupNotRecognized: String
+    val backupTooNew: String
+    val backupMissingRoutines: String
+    val backupDamaged: String
+}
+
+fun AppStrings.localizeDecimal(number: String): String = number.replace('.', decimalSeparator)
+
+fun AppStrings.weightText(weightKg: Double?): String = localizeDecimal(formatWeight(weightKg))
+
+private fun AppStrings.liftWeight(weightKg: Double): String =
+    if (weightKg == 0.0) bodyweight else weightText(weightKg)
+
+fun AppStrings.liftText(lift: LiftValue): String = "${liftWeight(lift.weightKg)}×${lift.reps}"
+
+fun AppStrings.recordText(lift: LiftValue): String {
+    val weight = if (lift.weightKg == 0.0) bodyweight else "${weightText(lift.weightKg)} kg"
+    return "$weight × ${lift.reps}"
+}
+
+fun AppStrings.weightWithUnit(weightKg: Double?): String = when (weightKg) {
+    null -> ""
+    0.0 -> bodyweight
+    else -> "${weightText(weightKg)} kg"
+}
+
+fun AppStrings.weekdayName(date: LocalDate): String = weekdayNames[date.dayOfWeek.ordinal]
+
+fun AppStrings.weekdayLetter(date: LocalDate): String = weekdayLetters[date.dayOfWeek.ordinal]
+
+fun AppStrings.fullDayText(date: LocalDate): String =
+    "${weekdayName(date)}, ${date.dayOfMonth} ${monthNamesInDate[date.monthValue - 1]}"
+
+fun AppStrings.fullDateText(date: LocalDate): String =
+    "${date.dayOfMonth} ${monthNamesInDate[date.monthValue - 1]} ${date.year}"
+
+fun AppStrings.shortDateText(date: LocalDate): String =
+    "${date.dayOfMonth} ${monthNamesShort[date.monthValue - 1]}"
+
+fun AppStrings.exerciseName(name: String): String = BuiltInNames.exercise(name, language)
+
+fun AppStrings.routineName(routine: Routine): String =
+    BuiltInNames.routine(routine.name, language).ifBlank { routine.letter }
+
+fun AppStrings.backupSummary(workouts: Int, sets: Int): String = "${workoutCount(workouts)}, ${setCount(sets)}"
