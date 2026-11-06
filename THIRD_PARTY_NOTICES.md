@@ -57,4 +57,10 @@ The Android app reads barcodes with Google's
 [ML Kit barcode scanning](https://developers.google.com/ml-kit/vision/barcode-scanning) model,
 bundled into the app and used under the [ML Kit Terms of Service](https://developers.google.com/ml-kit/terms),
 through [CameraX](https://developer.android.com/media/camera/camerax) (Apache License 2.0).
-ML Kit's network permissions are removed from the app manifest, so nothing is sent from the device.
+Barcodes are read on the device. ML Kit may send Google anonymous usage statistics about the scanner.
+
+## Gemini API (meal photos)
+
+Meal photos are analyzed by Google's [Gemini API](https://ai.google.dev/gemini-api) under each
+user's own API key and the [Gemini API Additional Terms of Service](https://ai.google.dev/gemini-api/terms).
+GymPad bundles no Google code for this; it calls the public REST endpoint directly.

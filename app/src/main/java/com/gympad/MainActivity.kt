@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge(statusBarStyle = darkBars, navigationBarStyle = darkBars)
         val app = application as GymPadApp
         setContent {
-            GymPadRoot(app.repository, app.foodRepository, app.installEpochDay, app.languageStore)
+            GymPadRoot(app.repository, app.foodRepository, app.mealAnalyzer, app.installEpochDay, app.languageStore)
         }
     }
 }

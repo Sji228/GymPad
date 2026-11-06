@@ -26,10 +26,16 @@ Available in English and Polish.
 - **Your own foods.** Anything missing, you enter once from the label; a scanned barcode is remembered for next time.
 - **One tap to repeat.** Recent foods remember the amount you last ate, and an empty meal offers to copy the same meal from the day before.
 - **Any day is editable,** including past days you forgot to log and future days you plan ahead.
+- **Meal photos with AI.** Snap your plate, optionally add a note like "fried in olive oil", and Google's Gemini estimates each food's weight, calories and macros. You check the list, fix any amount, and add it to the meal in one tap. It uses your own free Gemini API key; the app walks you through getting one.
 
 ## Your data
 
-Everything stays on your device. There is no server and no account, and the app has no internet permission. The only permission it asks for is the camera, for reading barcodes; frames are analyzed on the phone and never stored.
+Everything stays on your device. There is no server and no account. The app asks for two permissions:
+
+- **Camera,** for reading barcodes and taking meal photos. Barcodes are read on the phone.
+- **Internet,** only for meal photos. A photo and your note go straight from your phone to Google's Gemini API with your own key, and nowhere else. On Gemini's free tier, Google may use them to improve its products. Everything else works offline.
+
+The Gemini key is stored on the device and is never included in backups.
 
 Switching language never touches your training data. History, PRs and ghost values follow an exercise's internal ID rather than its name, so changing language writes nothing to the database:
 

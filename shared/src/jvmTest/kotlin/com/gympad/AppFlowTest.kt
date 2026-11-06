@@ -1,6 +1,7 @@
 package com.gympad
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -29,23 +30,37 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.room.Room
+import com.gympad.data.FakeGoogle
 import com.gympad.data.FoodCatalog
 import com.gympad.data.FoodDraft
-import com.gympad.data.NutritionGoals
-import com.gympad.domain.Meal
 import com.gympad.data.FoodRepository
 import com.gympad.data.GymDatabase
 import com.gympad.data.GymRepository
+import com.gympad.data.HttpResult
 import com.gympad.data.LanguageStore
+import com.gympad.data.MealAnalyzer
+import com.gympad.data.MemorySettings
+import com.gympad.data.NutritionGoals
 import com.gympad.data.SetTarget
+import com.gympad.data.TWO_FOODS
 import com.gympad.data.buildGymDatabase
 import com.gympad.data.decodeBackup
 import com.gympad.data.encode
+import com.gympad.data.geminiReply
 import com.gympad.domain.AppLanguage
 import com.gympad.domain.BuiltInNames
+import com.gympad.domain.Meal
 import com.gympad.domain.toTemplate
+import com.gympad.ui.LocalMealCamera
 import com.gympad.ui.strings.PolishStrings
 import com.gympad.ui.strings.fullDateText
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import javax.imageio.ImageIO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -53,11 +68,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import javax.imageio.ImageIO
 
 @OptIn(ExperimentalTestApi::class)
 class AppFlowTest {
@@ -93,6 +103,21 @@ class AppFlowTest {
     }
 
     private lateinit var food: FoodRepository
+    private val aiSettings = MemorySettings()
+    private var google = FakeGoogle { _, _, _ -> HttpResult(200, """{"models":[]}""") }
+
+    /** A small plate-coloured JPEG standing in for a camera photo. */
+    private fun mealPhoto(): ByteArray {
+        val image = BufferedImage(64, 48, BufferedImage.TYPE_INT_RGB)
+        image.createGraphics().apply {
+            color = java.awt.Color(0xE8, 0xD9, 0xB5)
+            fillRect(0, 0, 64, 48)
+            color = java.awt.Color(0xB5, 0x6A, 0x2E)
+            fillOval(10, 10, 30, 20)
+            dispose()
+        }
+        return ByteArrayOutputStream().also { ImageIO.write(image, "jpg", it) }.toByteArray()
+    }
 
     private val languageStore = object : LanguageStore {
         var stored: String? = "en"
@@ -111,6 +136,7 @@ class AppFlowTest {
         val repository = GymRepository(database)
         val catalog = FoodCatalog(File(tempFolder.root, "catalog"))
         food = FoodRepository(database, catalog)
+        val analyzer = MealAnalyzer(aiSettings, google)
         runBlocking {
             repository.seedIfEmpty()
             prepare(repository)
@@ -127,8 +153,9 @@ class AppFlowTest {
                     CompositionLocalProvider(
                         LocalViewModelStoreOwner provides stores,
                         LocalLifecycleOwner provides lifecycle,
+                        LocalMealCamera provides { onCaptured, _ -> LaunchedEffect(Unit) { onCaptured(mealPhoto()) } },
                     ) {
-                        GymPadRoot(repository, food, installEpochDay = today - 200, languageStore)
+                        GymPadRoot(repository, food, analyzer, installEpochDay = today - 200, languageStore)
                     }
                 }
                 awaitText("Barbell Bench Press")
@@ -604,5 +631,60 @@ class AppFlowTest {
         val oldFormat = before.copy(version = 1, foods = emptyList(), foodEntries = emptyList(), nutritionGoals = null).encode()
         repository.replaceAllData(decodeBackup(oldFormat))
         assertTrue(repository.exportBackup().foodEntries.isEmpty())
+    }
+
+    @Test fun `meal photo goes from the key guide to a reviewed diary entry`() {
+        google = FakeGoogle { method, _, _ ->
+            if (method == "GET") HttpResult(200, """{"models":[]}""") else HttpResult(200, geminiReply(TWO_FOODS))
+        }
+        app {
+            openFood()
+            tap("Photo of Lunch")
+            awaitText("Meal photos with Gemini")
+            waitForIdle()
+            shot("ai_01_guide")
+            type("API key", "AIzaTestKey123456")
+            onNodeWithText("Save key").performClick()
+
+            awaitText("Anything to add?")
+            assertEquals("AIzaTestKey123456", aiSettings.key)
+            type("Note about the meal", "fried in olive oil")
+            waitForIdle()
+            shot("ai_02_note")
+            onNodeWithText("Estimate").performClick()
+
+            awaitText("Fried chicken breast")
+            awaitText("Assumed one tablespoon of olive oil.")
+            shot("ai_03_review")
+            type("White rice, grams", "200")
+            awaitText("260 kcal · P 5 · C 56 · F 1")
+            onAllNodesWithText("Add to Lunch").onLast().performClick()
+
+            await { runBlocking { food.observeEntries(today).first() }.size == 2 }
+            val entries = runBlocking { food.observeEntries(today).first() }
+            assertTrue(entries.all { it.meal == Meal.LUNCH.code && it.food.brand == "Gemini" })
+            val rice = entries.single { it.food.name == "White rice" }
+            assertEquals(200.0, rice.grams, 0.0)
+            assertEquals(130.0, rice.food.kcal, 0.01)
+            val sent = google.requests.last().third!!
+            assertTrue("fried in olive oil" in sent)
+            awaitText("Fried chicken breast")
+            shot("ai_04_logged")
+            // AI foods come back as recents for a one-tap repeat, but stay out of My foods.
+            assertTrue(runBlocking { food.observeOwnFoods().first() }.isEmpty())
+        }
+    }
+
+    @Test fun `a refused key keeps the guide open with the reason`() {
+        google = FakeGoogle { _, _, _ -> HttpResult(400, """{"error":{"code":400,"message":"API key not valid."}}""") }
+        app {
+            openFood()
+            tap("Photo of Breakfast")
+            type("API key", "nope")
+            onNodeWithText("Save key").performClick()
+            awaitText("Google didn't accept this key. Check that you copied all of it.")
+            shot("ai_05_bad_key")
+            assertEquals(null, aiSettings.key)
+        }
     }
 }

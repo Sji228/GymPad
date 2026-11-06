@@ -1,6 +1,7 @@
 package com.gympad.ui.strings
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.gympad.data.AiError
 import com.gympad.data.Routine
 import com.gympad.domain.AppLanguage
 import com.gympad.domain.BuiltInNames
@@ -150,7 +151,6 @@ interface AppStrings {
     val save: String
     fun addFoodTo(meal: String): String
     fun mealPhoto(meal: String): String
-    val photoComingSoon: String
     val searchFood: String
     val scanBarcode: String
     val recent: String
@@ -190,6 +190,43 @@ interface AppStrings {
     val flashlight: String
     val close: String
     fun foodEntryCount(count: Int): String
+
+    val aiPhotos: String
+    val aiSetupTitle: String
+    val aiSetupIntro: String
+    val aiSetupSteps: List<String>
+    val openAiStudio: String
+    val apiKey: String
+    val pasteKey: String
+    val saveKey: String
+    val checkingKey: String
+    fun savedKey(masked: String): String
+    val removeKey: String
+    val aiSetupFinePrint: String
+    val aiInvalidKey: String
+    val aiRateLimited: String
+    val aiOffline: String
+    val aiBusy: String
+    val aiBlocked: String
+    val aiUnreadable: String
+    val aiNoKey: String
+    fun aiOther(message: String): String
+    val takePhoto: String
+    val choosePhoto: String
+    val describeMeal: String
+    val notePlaceholder: String
+    val noteDescription: String
+    val estimate: String
+    val skipNote: String
+    val analyzing: String
+    val retake: String
+    val editNote: String
+    val tryAgain: String
+    val changeKey: String
+    val noFoodFound: String
+    val estimateFailed: String
+    fun includeFood(name: String): String
+    fun gramsOf(name: String): String
 }
 
 fun AppStrings.localizeDecimal(number: String): String = number.replace('.', decimalSeparator)
@@ -242,3 +279,14 @@ fun AppStrings.gramsText(grams: Double): String = "${localizeDecimal(formatAmoun
 fun AppStrings.amountText(value: Double): String = localizeDecimal(formatAmount(value))
 
 fun AppStrings.foodName(item: FoodItem): String = item.displayName(language)
+
+fun AppStrings.aiErrorText(error: AiError): String = when (error) {
+    AiError.InvalidKey -> aiInvalidKey
+    AiError.RateLimited -> aiRateLimited
+    AiError.Offline -> aiOffline
+    AiError.Busy -> aiBusy
+    AiError.Blocked -> aiBlocked
+    AiError.Unreadable -> aiUnreadable
+    AiError.NoKey -> aiNoKey
+    is AiError.Other -> aiOther(error.message)
+}

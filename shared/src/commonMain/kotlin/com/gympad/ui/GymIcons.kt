@@ -56,6 +56,12 @@ object GymIcons {
         "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z",
         "M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
     )
+    val Gallery = strokeIcon(
+        "gallery",
+        "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+        "M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+        "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21",
+    )
     val Barcode = strokeIcon("barcode", "M3 5v14", "M8 5v14", "M12 5v14", "M17 5v14", "M21 5v14")
     val Search = strokeIcon("search", "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z", "m21 21-4.3-4.3")
     val Copy = strokeIcon(

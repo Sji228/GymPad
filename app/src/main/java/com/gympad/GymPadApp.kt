@@ -1,10 +1,12 @@
 package com.gympad
 
 import android.app.Application
+import com.gympad.data.AiSettingsStore
 import com.gympad.data.FoodCatalog
 import com.gympad.data.FoodRepository
 import com.gympad.data.GymRepository
 import com.gympad.data.LanguageStore
+import com.gympad.data.MealAnalyzer
 import com.gympad.data.createGymDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +22,24 @@ class GymPadApp : Application() {
     // The catalog copy can be rebuilt from the APK at any time, so it stays out of backups.
     val foodRepository: FoodRepository by lazy { FoodRepository(database, FoodCatalog(noBackupFilesDir)) }
 
+    private val preferences by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
+
     val languageStore: LanguageStore by lazy {
-        val preferences = getSharedPreferences("settings", MODE_PRIVATE)
         object : LanguageStore {
             override fun load() = preferences.getString("language", null)
             override fun save(code: String) = preferences.edit().putString("language", code).apply()
         }
+    }
+
+    val mealAnalyzer: MealAnalyzer by lazy {
+        MealAnalyzer(
+            object : AiSettingsStore {
+                override fun loadKey() = preferences.getString("gemini_key", null)
+                override fun saveKey(key: String?) = preferences.edit().putString("gemini_key", key).apply()
+                override fun loadModel() = preferences.getString("gemini_model", null)
+                override fun saveModel(model: String?) = preferences.edit().putString("gemini_model", model).apply()
+            },
+        )
     }
 
     val installEpochDay: Long by lazy {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.UUID
 
 /** What the user types when creating or fixing their own food. Values are per 100 g. */
 data class FoodDraft(
@@ -26,6 +27,9 @@ data class FoodDraft(
     val fat: Double,
     val portionGrams: Double?,
 )
+
+/** Shown where a brand would be, so an estimate is never mistaken for label data. */
+const val AI_BRAND = "Gemini"
 
 class FoodRepository(private val db: GymDatabase, private val catalog: FoodCatalog) {
     private val dao = db.foodDao()
@@ -99,6 +103,30 @@ class FoodRepository(private val db: GymDatabase, private val catalog: FoodCatal
                 createdAt = System.currentTimeMillis(),
             ),
         )
+    }
+
+    /**
+     * Logs foods estimated from a photo. Each becomes its own food, so it shows up in recents for a
+     * one-tap repeat; the "ai:" code keeps them out of My foods, which is for foods typed in by hand.
+     */
+    suspend fun addEstimated(epochDay: Long, meal: Meal, foods: List<Pair<EstimatedFood, Double>>) = write {
+        val now = System.currentTimeMillis()
+        foods.forEachIndexed { i, (food, grams) ->
+            val per100 = 100.0 / food.grams
+            val foodId = dao.insert(
+                Food(
+                    name = food.name,
+                    brand = AI_BRAND,
+                    catalogCode = "ai:${UUID.randomUUID()}",
+                    kcal = food.kcal * per100,
+                    protein = food.protein * per100,
+                    carbs = food.carbs * per100,
+                    fat = food.fat * per100,
+                    portionGrams = food.grams,
+                ),
+            )
+            dao.insert(FoodEntry(epochDay = epochDay, meal = meal.code, foodId = foodId, grams = grams, createdAt = now + i))
+        }
     }
 
     suspend fun updateEntry(entryId: Long, grams: Double, meal: Meal) = write {

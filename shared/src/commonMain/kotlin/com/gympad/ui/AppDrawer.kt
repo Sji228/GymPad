@@ -40,6 +40,7 @@ fun AppDrawer(
     onSelectLanguage: (AppLanguage) -> Unit,
     onNavigate: (Destination) -> Unit,
     onRoutines: () -> Unit,
+    onAiPhotos: () -> Unit,
     onBackup: () -> Unit,
 ) {
     val strings = LocalStrings.current
@@ -58,6 +59,7 @@ fun AppDrawer(
         DrawerItem(strings.workout, GymIcons.Dumbbell, current == Destination.WORKOUT) { onNavigate(Destination.WORKOUT) }
         DrawerItem(strings.routines, GymIcons.Routines, selected = false, onClick = onRoutines)
         DrawerItem(strings.food, GymIcons.Food, current == Destination.FOOD) { onNavigate(Destination.FOOD) }
+        DrawerItem(strings.aiPhotos, GymIcons.Camera, selected = false, onClick = onAiPhotos)
         HorizontalDivider(
             Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             color = colors.outlineVariant,

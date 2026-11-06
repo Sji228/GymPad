@@ -63,6 +63,7 @@ import kotlin.math.roundToInt
 @Composable
 fun FoodScreen(
     viewModel: FoodViewModel,
+    mealPhoto: MealPhotoViewModel,
     drawerContent: @Composable (closeDrawer: () -> Unit) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -75,7 +76,8 @@ fun FoodScreen(
     var addingTo by rememberSaveable { mutableStateOf<Meal?>(null) }
     var editingEntry by remember { mutableStateOf<FoodEntryUi?>(null) }
     var editingGoals by rememberSaveable { mutableStateOf(false) }
-    var photoHintFor by remember { mutableStateOf<Meal?>(null) }
+    val cameraFor by mealPhoto.camera.collectAsStateWithLifecycle()
+    val photoStep by mealPhoto.step.collectAsStateWithLifecycle()
 
     // Empty meals offer to copy the same meal from the last day that had it.
     val emptyMeals = state.meals.filter { it.entries.isEmpty() }.map { it.meal }
@@ -139,9 +141,8 @@ fun FoodScreen(
                             MealCard(
                                 meal = meal,
                                 copyFrom = copySources[meal.meal]?.let { copyLabel(strings, it, state.selectedDay) },
-                                photoHint = photoHintFor == meal.meal,
                                 onAdd = { addingTo = meal.meal },
-                                onPhoto = { photoHintFor = if (photoHintFor == meal.meal) null else meal.meal },
+                                onPhoto = { mealPhoto.requestPhoto(meal.meal) },
                                 onCopy = { copySources[meal.meal]?.let { viewModel.copyMeal(it, meal.meal) } },
                                 onEntry = { editingEntry = it },
                                 modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
@@ -172,6 +173,12 @@ fun FoodScreen(
     }
     if (editingGoals) {
         GoalsSheet(goals = state.goals, onSave = viewModel::setGoals, onDismiss = { editingGoals = false })
+    }
+    photoStep?.let { step ->
+        MealPhotoSheet(step = step, viewModel = mealPhoto, onAdd = { mealPhoto.add(state.selectedDay, it) })
+    }
+    if (cameraFor != null) {
+        LocalMealCamera.current(mealPhoto::photoTaken, mealPhoto::closeCamera)
     }
 }
 
@@ -336,7 +343,6 @@ private fun Progress(value: Double, goal: Double, height: Int) {
 private fun MealCard(
     meal: MealUi,
     copyFrom: String?,
-    photoHint: Boolean,
     onAdd: () -> Unit,
     onPhoto: () -> Unit,
     onCopy: () -> Unit,
@@ -366,7 +372,7 @@ private fun MealCard(
                 GymIcons.Camera,
                 strings.mealPhoto(name),
                 onPhoto,
-                tint = colors.outline,
+                tint = colors.onSurfaceVariant,
                 size = 44.dp,
                 iconSize = 20.dp,
             )
@@ -383,14 +389,6 @@ private fun MealCard(
             ) {
                 Icon(GymIcons.Plus, contentDescription = null, modifier = Modifier.size(20.dp))
             }
-        }
-        if (photoHint) {
-            Text(
-                strings.photoComingSoon,
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
-            )
         }
         meal.entries.forEach { entry ->
             EntryRow(entry, onClick = { onEntry(entry) })

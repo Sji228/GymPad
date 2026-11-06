@@ -9,21 +9,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gympad.data.FoodRepository
 import com.gympad.data.GymRepository
 import com.gympad.data.LanguageStore
+import com.gympad.data.MealAnalyzer
 import com.gympad.domain.AppLanguage
+import com.gympad.ui.AiSetupSheet
 import com.gympad.ui.AppDrawer
 import com.gympad.ui.BackupScreen
-import com.gympad.ui.Destination
-import com.gympad.ui.FoodScreen
-import com.gympad.ui.FoodViewModel
 import com.gympad.ui.BackupViewModel
+import com.gympad.ui.Destination
 import com.gympad.ui.EditorScreen
 import com.gympad.ui.EditorViewModel
+import com.gympad.ui.FoodScreen
+import com.gympad.ui.FoodViewModel
 import com.gympad.ui.MainScreen
 import com.gympad.ui.MainViewModel
+import com.gympad.ui.MealPhotoViewModel
 import com.gympad.ui.strings.LocalStrings
 import com.gympad.ui.strings.strings
 import com.gympad.ui.theme.GymPadTheme
@@ -35,6 +39,7 @@ private enum class Screen { MAIN, FOOD, EDITOR, BACKUP }
 fun GymPadRoot(
     repository: GymRepository,
     foodRepository: FoodRepository,
+    mealAnalyzer: MealAnalyzer,
     installEpochDay: Long,
     languageStore: LanguageStore,
 ) {
@@ -44,6 +49,7 @@ fun GymPadRoot(
             AppContent(
                 repository = repository,
                 foodRepository = foodRepository,
+                mealAnalyzer = mealAnalyzer,
                 installEpochDay = installEpochDay,
                 language = language,
                 onSelectLanguage = {
@@ -59,6 +65,7 @@ fun GymPadRoot(
 private fun AppContent(
     repository: GymRepository,
     foodRepository: FoodRepository,
+    mealAnalyzer: MealAnalyzer,
     installEpochDay: Long,
     language: AppLanguage,
     onSelectLanguage: (AppLanguage) -> Unit,
@@ -70,6 +77,8 @@ private fun AppContent(
         val mainViewModel = viewModel { MainViewModel(repository, installEpochDay) }
         val editorViewModel = viewModel { EditorViewModel(repository) }
         val foodViewModel = viewModel { FoodViewModel(foodRepository, installEpochDay) }
+        val mealPhotoViewModel = viewModel { MealPhotoViewModel(mealAnalyzer, foodRepository) }
+        val aiSetupOpen by mealPhotoViewModel.setupOpen.collectAsStateWithLifecycle()
         LifecycleResumeEffect(Unit) {
             mainViewModel.refreshToday()
             foodViewModel.refreshToday()
@@ -94,6 +103,10 @@ private fun AppContent(
                     editorViewModel.selectRoutine(mainViewModel.uiState.value.routineId)
                     screen = Screen.EDITOR
                 },
+                onAiPhotos = {
+                    closeDrawer()
+                    mealPhotoViewModel.openSetup()
+                },
                 onBackup = {
                     closeDrawer()
                     screen = Screen.BACKUP
@@ -108,6 +121,7 @@ private fun AppContent(
             )
             Screen.FOOD -> FoodScreen(
                 viewModel = foodViewModel,
+                mealPhoto = mealPhotoViewModel,
                 drawerContent = drawer,
                 onBack = {
                     home = Destination.WORKOUT
@@ -122,6 +136,9 @@ private fun AppContent(
                 viewModel = viewModel { BackupViewModel(repository) },
                 onBack = { screen = homeScreen() },
             )
+        }
+        if (aiSetupOpen) {
+            AiSetupSheet(mealPhotoViewModel)
         }
     }
 }
