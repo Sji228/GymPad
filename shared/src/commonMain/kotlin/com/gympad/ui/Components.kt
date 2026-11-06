@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -168,7 +169,10 @@ fun GymTextField(
     description: String,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.Words,
     onDone: () -> Unit = {},
+    leading: @Composable () -> Unit = {},
     trailing: @Composable () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
@@ -187,7 +191,8 @@ fun GymTextField(
         cursorBrush = SolidColor(colors.primary),
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
         keyboardOptions = KeyboardOptions(
-            capitalization = KeyboardCapitalization.Words,
+            capitalization = if (keyboardType == KeyboardType.Text) capitalization else KeyboardCapitalization.None,
+            keyboardType = keyboardType,
             imeAction = ImeAction.Done,
         ),
         keyboardActions = KeyboardActions(onDone = { onDone() }),
@@ -212,6 +217,7 @@ fun GymTextField(
             .semantics { contentDescription = description },
         decorationBox = { inner ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 14.dp, end = 4.dp)) {
+                leading()
                 Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                     if (value.isEmpty()) {
                         Text(

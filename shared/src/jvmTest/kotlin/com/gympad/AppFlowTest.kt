@@ -29,6 +29,11 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.room.Room
+import com.gympad.data.FoodCatalog
+import com.gympad.data.FoodDraft
+import com.gympad.data.NutritionGoals
+import com.gympad.domain.Meal
+import com.gympad.data.FoodRepository
 import com.gympad.data.GymDatabase
 import com.gympad.data.GymRepository
 import com.gympad.data.LanguageStore
@@ -87,6 +92,8 @@ class AppFlowTest {
         onNodeWithContentDescription(description).performTextReplacement(text)
     }
 
+    private lateinit var food: FoodRepository
+
     private val languageStore = object : LanguageStore {
         var stored: String? = "en"
         override fun load() = stored
@@ -102,6 +109,8 @@ class AppFlowTest {
         val database = Room.databaseBuilder<GymDatabase>(name = File(tempFolder.root, "test.db").absolutePath)
             .buildGymDatabase()
         val repository = GymRepository(database)
+        val catalog = FoodCatalog(File(tempFolder.root, "catalog"))
+        food = FoodRepository(database, catalog)
         runBlocking {
             repository.seedIfEmpty()
             prepare(repository)
@@ -119,7 +128,7 @@ class AppFlowTest {
                         LocalViewModelStoreOwner provides stores,
                         LocalLifecycleOwner provides lifecycle,
                     ) {
-                        GymPadRoot(repository, installEpochDay = today - 200, languageStore)
+                        GymPadRoot(repository, food, installEpochDay = today - 200, languageStore)
                     }
                 }
                 awaitText("Barbell Bench Press")
@@ -127,6 +136,7 @@ class AppFlowTest {
             }
         } finally {
             stores.viewModelStore.clear()
+            catalog.close()
             database.close()
         }
     }
@@ -433,5 +443,166 @@ class AppFlowTest {
         assertEquals(before.sets, after.sets)
         assertEquals(before.exercises.toSet(), after.exercises.toSet())
         assertEquals(before.slots.toSet(), after.slots.toSet())
+    }
+
+    private fun SkikoComposeUiTest.openFood(menuLabel: String = "Food") {
+        tap("Menu")
+        awaitText(menuLabel)
+        onNodeWithText(menuLabel).performClick()
+        awaitDescription(if (menuLabel == "Food") "Add to Breakfast" else "Dodaj: Śniadanie")
+        waitForIdle()
+    }
+
+    private suspend fun logFood(query: String, meal: Meal, grams: Double, daysAgo: Long = 0) {
+        val item = food.search(query).first()
+        food.addEntry(today - daysAgo, meal, item, grams)
+    }
+
+    @Test fun `food diary adds from search and totals the day`() = app(
+        prepare = {
+            food.setGoals(NutritionGoals(kcal = 2400, protein = 160, carbs = 250, fat = 70))
+            logFood("oats", Meal.BREAKFAST, 80.0)
+            logFood("chicken breast raw", Meal.LUNCH, 200.0)
+            logFood("white rice dry", Meal.LUNCH, 100.0)
+        },
+    ) {
+        openFood()
+        awaitText("Chicken breast, raw")
+        shot("food_01_day")
+
+        tap("Add to Snacks")
+        awaitDescription("Search, or type a barcode")
+        waitForIdle()
+        shot("food_02_add_recent")
+        type("Search, or type a barcode", "banan")
+        awaitText("Banana")
+        shot("food_03_search")
+        onNodeWithText("Banana").performClick()
+        awaitDescription("Amount")
+        type("Amount", "150")
+        awaitText("134 kcal")
+        shot("food_04_amount")
+        onNodeWithText("Add").performClick()
+        awaitText("Banana · 150 g")
+
+        val entries = runBlocking { food.observeEntries(today).first() }
+        val banana = entries.single { it.food.name == "Banana" }
+        assertEquals(Meal.SNACKS.code, banana.meal)
+        assertEquals(150.0, banana.grams, 0.0)
+        // Logging the same catalog food again reuses its diary copy.
+        runBlocking { logFood("banana", Meal.SUPPER, 100.0) }
+        assertEquals(1, runBlocking { food.observeEntries(today).first() }.map { it.food.id }.filter { it == banana.food.id }.distinct().size)
+        assertEquals(2, runBlocking { food.observeEntries(today).first() }.count { it.food.id == banana.food.id })
+    }
+
+    @Test fun `entries are edited, moved, removed and restored`() = app(
+        prepare = { logFood("egg", Meal.BREAKFAST, 100.0) },
+    ) {
+        openFood()
+        awaitText("Egg")
+        onNodeWithText("Egg").performClick()
+        awaitDescription("Amount")
+        type("Amount", "150")
+        onAllNodesWithText("Supper").onLast().performClick()
+        waitForIdle()
+        shot("food_05_edit_entry")
+        onNodeWithText("Save").performClick()
+        await { runBlocking { food.observeEntries(today).first() }.single().let { it.grams == 150.0 && it.meal == Meal.SUPPER.code } }
+
+        onNodeWithText("Egg").performClick()
+        awaitText("Remove")
+        onNodeWithText("Remove").performClick()
+        awaitText("Removed Egg")
+        shot("food_06_undo")
+        onNodeWithText("Undo").performClick()
+        await { runBlocking { food.observeEntries(today).first() }.size == 1 }
+    }
+
+    @Test fun `unknown barcode creates a food that is found next time`() = app {
+        openFood()
+        tap("Add to Breakfast")
+        type("Search, or type a barcode", "5909990000017")
+        awaitText("Barcode 5909990000017 isn't in the database yet. Enter it once from the label and scanning will find it next time.")
+        onNodeWithText("Create food").performClick()
+        awaitDescription("Name")
+        type("Name", "Homemade granola")
+        type("Calories (kcal)", "450")
+        type("Protein (g)", "12")
+        type("Carbs (g)", "60")
+        type("Fat (g)", "17")
+        waitForIdle()
+        shot("food_07_create")
+        onNodeWithText("Save").performClick()
+        awaitDescription("Amount")
+        type("Amount", "60")
+        onNodeWithText("Add").performClick()
+        awaitText("Homemade granola · 60 g")
+
+        val found = runBlocking { food.findBarcode("5909990000017") }
+        assertEquals("Homemade granola", found?.name)
+        assertEquals(60.0, found?.lastGrams)
+    }
+
+    @Test fun `future days are open for planning and past meals can be copied`() = app(
+        prepare = { logFood("oats", Meal.BREAKFAST, 70.0, daysAgo = 1) },
+    ) {
+        openFood()
+        awaitText("Copy from yesterday")
+        shot("food_08_copy_offer")
+        onNodeWithText("Copy from yesterday").performClick()
+        awaitText("Oats")
+        assertEquals(70.0, runBlocking { food.observeEntries(today).first() }.single().grams, 0.0)
+
+        val tomorrow = LocalDate.ofEpochDay(today + 1)
+        tap(tomorrow.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)))
+        // Today's breakfast is now the one to copy, and today is tomorrow's yesterday.
+        awaitText("Copy from yesterday")
+        tap("Add to Lunch")
+        type("Search, or type a barcode", "apple")
+        awaitText("Apple")
+        onNodeWithText("Apple").performClick()
+        awaitDescription("Amount")
+        onNodeWithText("Add").performClick()
+        await { runBlocking { food.observeEntries(today + 1).first() }.size == 1 }
+    }
+
+    @Test fun `food screens render in Polish`() = app(
+        prepare = {
+            food.setGoals(NutritionGoals(kcal = 2200, protein = 150))
+            logFood("jajko", Meal.BREAKFAST, 120.0)
+            logFood("chleb zytni", Meal.BREAKFAST, 64.0)
+        },
+    ) {
+        switchLanguage("Polski")
+        openFood("Jedzenie")
+        awaitText("Jajko")
+        shot("pl_food_01_day")
+        tap("Dodaj: Obiad")
+        type("Szukaj lub wpisz kod kreskowy", "piers z kurczaka")
+        awaitText("Pierś z kurczaka, surowa")
+        shot("pl_food_02_search")
+    }
+
+    @Test fun `backup carries the food diary`() = app(
+        prepare = {
+            food.setGoals(NutritionGoals(kcal = 2000))
+            logFood("oats", Meal.BREAKFAST, 80.0, daysAgo = 2)
+            food.createFood(FoodDraft("Protein bar", "Acme", null, 380.0, 30.0, 40.0, 12.0, 60.0))
+        },
+    ) { repository ->
+        val before = repository.exportBackup()
+        assertEquals(1, before.foodEntries.size)
+        assertEquals(2, before.foods.size)
+        val restored = decodeBackup(before.encode())
+        repository.replaceAllData(restored)
+        val after = repository.exportBackup()
+        assertEquals(before.foods.toSet(), after.foods.toSet())
+        assertEquals(before.foodEntries, after.foodEntries)
+        assertEquals(2000, after.nutritionGoals?.kcal)
+
+        // A backup from before food tracking still restores, with an empty diary.
+        val oldFormat = before.copy(version = 1, foods = emptyList(), foodEntries = emptyList(), nutritionGoals = null).encode()
+        repository.replaceAllData(decodeBackup(oldFormat))
+        assertTrue(repository.exportBackup().foodEntries.isEmpty())
     }
 }

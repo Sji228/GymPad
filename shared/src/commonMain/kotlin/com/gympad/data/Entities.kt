@@ -107,3 +107,53 @@ data class SetEntry(
     val completed: Boolean = false,
     val completedAt: Long? = null,
 )
+
+/**
+ * Nutrition is per 100 g (or 100 ml for drinks, as labels give it). Products from the bundled
+ * catalog are copied here when first logged, so the diary and backups never depend on the catalog.
+ */
+@Serializable
+@Entity(tableName = "food", indices = [Index("barcode"), Index(value = ["catalogCode"], unique = true)])
+data class Food(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    /** Only basic catalog foods have a Polish name; product names stay as printed on the pack. */
+    val namePl: String? = null,
+    val brand: String? = null,
+    val barcode: String? = null,
+    val catalogCode: String? = null,
+    val kcal: Double,
+    val protein: Double,
+    val carbs: Double,
+    val fat: Double,
+    val portionGrams: Double? = null,
+    val packageGrams: Double? = null,
+    /** Hidden from search and recents; entries that use it keep showing it. */
+    val archived: Boolean = false,
+)
+
+@Serializable
+@Entity(
+    tableName = "food_entry",
+    foreignKeys = [ForeignKey(Food::class, ["id"], ["foodId"])],
+    indices = [Index("epochDay"), Index("foodId")],
+)
+data class FoodEntry(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val epochDay: Long,
+    val meal: Int,
+    val foodId: Long,
+    val grams: Double,
+    val createdAt: Long,
+)
+
+/** A single row: daily targets, each optional. */
+@Serializable
+@Entity(tableName = "nutrition_goals")
+data class NutritionGoals(
+    @PrimaryKey val id: Int = 1,
+    val kcal: Int? = null,
+    val protein: Int? = null,
+    val carbs: Int? = null,
+    val fat: Int? = null,
+)

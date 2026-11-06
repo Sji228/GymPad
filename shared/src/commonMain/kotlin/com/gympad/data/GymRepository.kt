@@ -19,6 +19,7 @@ data class SetTarget(
 
 class GymRepository(private val db: GymDatabase) {
     private val dao = db.dao()
+    private val foodDao = db.foodDao()
 
     // Keystrokes must land in the order they were typed, and two quick edits must not both
     // try to create today's session.
@@ -200,11 +201,17 @@ class GymRepository(private val db: GymDatabase) {
             sessions = dao.allSessions(),
             sessionExercises = dao.allSessionExercises(),
             sets = dao.allSets(),
+            foods = foodDao.allFoods(),
+            foodEntries = foodDao.allEntries(),
+            nutritionGoals = foodDao.goals(),
         )
     }
 
     /** Runs in one transaction: a backup with broken references leaves current data untouched. */
     suspend fun replaceAllData(backup: BackupFile) = write {
+        foodDao.clearEntries()
+        foodDao.clearFoods()
+        foodDao.clearGoals()
         dao.clearSets()
         dao.clearSessionExercises()
         dao.clearSessions()
@@ -219,5 +226,8 @@ class GymRepository(private val db: GymDatabase) {
         dao.insertSessions(backup.sessions)
         dao.insertSessionExercises(backup.sessionExercises)
         dao.insertSets(backup.sets)
+        foodDao.insertFoods(backup.foods)
+        foodDao.insertEntries(backup.foodEntries)
+        backup.nutritionGoals?.let { foodDao.upsert(it) }
     }
 }

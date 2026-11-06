@@ -45,6 +45,8 @@ data class MainUiState(
     val cards: List<ExerciseCardUi> = emptyList(),
 ) {
     val isReadOnly: Boolean get() = selectedDay != today
+
+    val days: DayRange get() = DayRange(firstDay, today, today, selectedDay, statuses)
 }
 
 private data class Selection(

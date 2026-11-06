@@ -36,6 +36,39 @@ object GymIcons {
     )
     val Routines = strokeIcon("routines", "M8 6h13", "M8 12h13", "M8 18h13", "M3 6h.01", "M3 12h.01", "M3 18h.01")
     val Export = strokeIcon("export", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "M17 8l-5-5-5 5", "M12 3v12")
+    val Dumbbell = strokeIcon(
+        "dumbbell",
+        "M6.5 6.5h11",
+        "M6.5 17.5h11",
+        "M6 20v-16",
+        "M18 20v-16",
+        "M3 17v-10",
+        "M21 17v-10",
+    )
+    val Food = strokeIcon(
+        "food",
+        "M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2",
+        "M7 2v20",
+        "M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7",
+    )
+    val Camera = strokeIcon(
+        "camera",
+        "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z",
+        "M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+    )
+    val Barcode = strokeIcon("barcode", "M3 5v14", "M8 5v14", "M12 5v14", "M17 5v14", "M21 5v14")
+    val Search = strokeIcon("search", "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z", "m21 21-4.3-4.3")
+    val Copy = strokeIcon(
+        "copy",
+        "M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z",
+        "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
+    )
+    val Flashlight = strokeIcon(
+        "flashlight",
+        "M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z",
+        "M6 6h12",
+        "M12 12v2",
+    )
     val Import = strokeIcon("import", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "M7 10l5 5 5-5", "M12 15V3")
 }
 

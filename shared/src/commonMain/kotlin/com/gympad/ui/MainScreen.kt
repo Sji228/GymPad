@@ -15,17 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -39,14 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.gympad.domain.AppLanguage
 import com.gympad.ui.strings.LocalStrings
 import com.gympad.ui.strings.fullDateText
 import com.gympad.ui.strings.fullDayText
@@ -61,10 +54,7 @@ private data class SlotSheet(val slotId: Long, val startAddingVariant: Boolean)
 fun MainScreen(
     viewModel: MainViewModel,
     editor: EditorViewModel,
-    language: AppLanguage,
-    onSelectLanguage: (AppLanguage) -> Unit,
-    onOpenEditor: (Long?) -> Unit,
-    onOpenBackup: () -> Unit,
+    drawerContent: @Composable (closeDrawer: () -> Unit) -> Unit,
 ) {
     val strings = LocalStrings.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,23 +71,7 @@ fun MainScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = drawerState.isOpen,
-        drawerContent = {
-            AppDrawer(
-                language = language,
-                onSelectLanguage = {
-                    onSelectLanguage(it)
-                    scope.launch { drawerState.close() }
-                },
-                onRoutines = {
-                    scope.launch { drawerState.close() }
-                    onOpenEditor(state.routineId)
-                },
-                onBackup = {
-                    scope.launch { drawerState.close() }
-                    onOpenBackup()
-                },
-            )
-        },
+        drawerContent = { drawerContent { scope.launch { drawerState.close() } } },
     ) {
         Column(
             Modifier
@@ -114,7 +88,8 @@ fun MainScreen(
             )
             if (historyOpen) {
                 YearView(
-                    state = state,
+                    state = state.days,
+                    legend = LegendLabels(strings.legendComplete, strings.legendIncomplete, strings.legendRest),
                     onSelectDay = {
                         viewModel.selectDay(it)
                         historyOpen = false
@@ -152,88 +127,6 @@ fun MainScreen(
                 onDismiss = { addingExercise = false },
             )
         }
-    }
-}
-
-@Composable
-private fun AppDrawer(
-    language: AppLanguage,
-    onSelectLanguage: (AppLanguage) -> Unit,
-    onRoutines: () -> Unit,
-    onBackup: () -> Unit,
-) {
-    val strings = LocalStrings.current
-    val colors = MaterialTheme.colorScheme
-    val itemColors = NavigationDrawerItemDefaults.colors(
-        unselectedContainerColor = Color.Transparent,
-        unselectedIconColor = colors.onSurfaceVariant,
-        unselectedTextColor = colors.onSurface,
-    )
-    ModalDrawerSheet(
-        modifier = Modifier.width(280.dp),
-        drawerContainerColor = colors.surfaceContainer,
-        drawerContentColor = colors.onSurface,
-        drawerTonalElevation = 0.dp,
-    ) {
-        Text(
-            "GymPad",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(start = 24.dp, top = 20.dp, bottom = 16.dp).semantics { heading() },
-        )
-        NavigationDrawerItem(
-            label = { Text(strings.routines, style = MaterialTheme.typography.bodyLarge) },
-            icon = { Icon(GymIcons.Routines, contentDescription = null, modifier = Modifier.size(22.dp)) },
-            selected = false,
-            onClick = onRoutines,
-            colors = itemColors,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.padding(horizontal = 12.dp),
-        )
-        NavigationDrawerItem(
-            label = { Text(strings.backup, style = MaterialTheme.typography.bodyLarge) },
-            icon = { Icon(GymIcons.Export, contentDescription = null, modifier = Modifier.size(22.dp)) },
-            selected = false,
-            onClick = onBackup,
-            colors = itemColors,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.padding(horizontal = 12.dp),
-        )
-        Spacer(Modifier.weight(1f))
-        SectionLabel(strings.languageLabel, Modifier.padding(start = 24.dp, bottom = 8.dp))
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            AppLanguage.entries.forEach { option ->
-                LanguageOption(
-                    option = option,
-                    selected = option == language,
-                    onClick = { onSelectLanguage(option) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LanguageOption(option: AppLanguage, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-        modifier
-            .height(46.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(if (selected) colors.primary else colors.surfaceContainerHigh)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            option.nativeName,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (selected) colors.onPrimary else colors.onSurfaceVariant,
-        )
     }
 }
 
@@ -324,7 +217,7 @@ private fun DayContent(
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item(key = "ribbon") {
-            WeekRibbon(state = state, onSelectDay = viewModel::selectDay)
+            WeekRibbon(state = state.days, onSelectDay = viewModel::selectDay)
         }
         if (!state.isReadOnly || state.loggedRoutineIds.isNotEmpty()) {
             item(key = "tabs") {

@@ -1,6 +1,7 @@
 package com.gympad.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import java.awt.FileDialog
 import java.awt.Frame
@@ -27,6 +28,13 @@ actual fun rememberBackupFilePicker(
             }
         },
     )
+}
+
+actual val canScanBarcodes = false
+
+@Composable
+actual fun BarcodeScanner(onScanned: (String) -> Unit, onDismiss: () -> Unit) {
+    LaunchedEffect(Unit) { onDismiss() }
 }
 
 private fun chooseFile(title: String, mode: Int, suggestedName: String?): File? {

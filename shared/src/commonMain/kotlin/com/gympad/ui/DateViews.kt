@@ -59,16 +59,26 @@ private fun statusColor(status: DayStatus?): Color = when (status) {
 private fun weekStart(epochDay: Long): LocalDate =
     LocalDate.ofEpochDay(epochDay).with(DayOfWeek.MONDAY)
 
+/** The days a screen can show: workouts end today, the food diary reaches into the future. */
+data class DayRange(
+    val firstDay: Long,
+    val lastDay: Long,
+    val today: Long,
+    val selectedDay: Long,
+    val statuses: Map<Long, DayStatus>,
+)
+
 @Composable
-fun WeekRibbon(state: MainUiState, onSelectDay: (Long) -> Unit) {
+fun WeekRibbon(state: DayRange, onSelectDay: (Long) -> Unit) {
     val strings = LocalStrings.current
     val firstWeek = weekStart(state.firstDay)
-    val weekCount = ChronoUnit.WEEKS.between(firstWeek, weekStart(state.today)).toInt() + 1
-    val pagerState = rememberPagerState(initialPage = weekCount - 1) { weekCount }
+    val weekCount = ChronoUnit.WEEKS.between(firstWeek, weekStart(state.lastDay)).toInt() + 1
+    val selectedWeek = ChronoUnit.WEEKS.between(firstWeek, weekStart(state.selectedDay)).toInt()
+    val pagerState = rememberPagerState(initialPage = selectedWeek) { weekCount }
 
     // Follows the selection (history, "Today") without undoing a manual swipe.
     LaunchedEffect(state.selectedDay, weekCount) {
-        pagerState.scrollToPage(ChronoUnit.WEEKS.between(firstWeek, weekStart(state.selectedDay)).toInt())
+        pagerState.scrollToPage(selectedWeek)
     }
 
     HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth()) { page ->
@@ -76,7 +86,7 @@ fun WeekRibbon(state: MainUiState, onSelectDay: (Long) -> Unit) {
             for (offset in 0L until 7L) {
                 val date = firstWeek.plusWeeks(page.toLong()).plusDays(offset)
                 val epochDay = date.toEpochDay()
-                val selectable = epochDay <= state.today
+                val selectable = epochDay <= state.lastDay
                 Column(
                     Modifier
                         .weight(1f)
@@ -98,7 +108,8 @@ fun WeekRibbon(state: MainUiState, onSelectDay: (Long) -> Unit) {
                         status = state.statuses[epochDay],
                         selected = epochDay == state.selectedDay,
                         isToday = epochDay == state.today,
-                        isFuture = !selectable,
+                        isFuture = epochDay > state.today,
+                        enabled = selectable,
                     )
                 }
             }
@@ -107,7 +118,14 @@ fun WeekRibbon(state: MainUiState, onSelectDay: (Long) -> Unit) {
 }
 
 @Composable
-private fun DayCircle(date: LocalDate, status: DayStatus?, selected: Boolean, isToday: Boolean, isFuture: Boolean) {
+private fun DayCircle(
+    date: LocalDate,
+    status: DayStatus?,
+    selected: Boolean,
+    isToday: Boolean,
+    isFuture: Boolean,
+    enabled: Boolean,
+) {
     val colors = MaterialTheme.colorScheme
     val hasStatus = status == DayStatus.COMPLETE || status == DayStatus.PARTIAL
     Box(
@@ -122,7 +140,7 @@ private fun DayCircle(date: LocalDate, status: DayStatus?, selected: Boolean, is
             )
             .padding(4.dp)
             .clip(CircleShape)
-            .background(if (isFuture) Color.Transparent else statusColor(status)),
+            .background(if (isFuture && !hasStatus) Color.Transparent else statusColor(status)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -131,8 +149,9 @@ private fun DayCircle(date: LocalDate, status: DayStatus?, selected: Boolean, is
                 fontWeight = if (isToday || hasStatus) FontWeight.Bold else FontWeight.Medium,
             ),
             color = when {
-                isFuture -> colors.outline
                 hasStatus -> OnStatus
+                !enabled -> colors.outline
+                isFuture && !selected -> colors.onSurfaceVariant
                 isToday || selected -> colors.onSurface
                 else -> colors.onSurfaceVariant
             },
@@ -145,11 +164,14 @@ private sealed interface YearItem {
     data class Month(val month: YearMonth) : YearItem
 }
 
+/** Labels for green, yellow and gray, which mean different things for workouts and food. */
+data class LegendLabels(val complete: String, val partial: String, val none: String)
+
 @Composable
-fun YearView(state: MainUiState, onSelectDay: (Long) -> Unit) {
-    val items = remember(state.firstDay, state.today) {
+fun YearView(state: DayRange, legend: LegendLabels, onSelectDay: (Long) -> Unit) {
+    val items = remember(state.firstDay, state.lastDay) {
         val first = YearMonth.from(LocalDate.ofEpochDay(state.firstDay))
-        val last = YearMonth.from(LocalDate.ofEpochDay(state.today))
+        val last = YearMonth.from(LocalDate.ofEpochDay(state.lastDay))
         buildList<YearItem> {
             var month = last
             var year = -1
@@ -170,7 +192,7 @@ fun YearView(state: MainUiState, onSelectDay: (Long) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) { Legend() }
+        item(span = { GridItemSpan(maxLineSpan) }) { Legend(legend) }
         items(items, span = { item ->
             GridItemSpan(if (item is YearItem.Header) maxLineSpan else 1)
         }) { item ->
@@ -183,12 +205,11 @@ fun YearView(state: MainUiState, onSelectDay: (Long) -> Unit) {
 }
 
 @Composable
-private fun Legend() {
-    val strings = LocalStrings.current
+private fun Legend(labels: LegendLabels) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        LegendItem(DoneGreen, strings.legendComplete)
-        LegendItem(PartialYellow, strings.legendIncomplete)
-        LegendItem(MaterialTheme.colorScheme.surfaceContainerHighest, strings.legendRest)
+        LegendItem(DoneGreen, labels.complete)
+        LegendItem(PartialYellow, labels.partial)
+        LegendItem(MaterialTheme.colorScheme.surfaceContainerHighest, labels.none)
     }
 }
 
@@ -202,7 +223,7 @@ private fun LegendItem(color: Color, label: String) {
 }
 
 @Composable
-private fun MonthGrid(month: YearMonth, state: MainUiState, onSelectDay: (Long) -> Unit) {
+private fun MonthGrid(month: YearMonth, state: DayRange, onSelectDay: (Long) -> Unit) {
     val strings = LocalStrings.current
     Column {
         Text(
@@ -237,11 +258,11 @@ private fun MonthGrid(month: YearMonth, state: MainUiState, onSelectDay: (Long) 
 }
 
 @Composable
-private fun YearDayDot(date: LocalDate, state: MainUiState, onSelectDay: (Long) -> Unit) {
+private fun YearDayDot(date: LocalDate, state: DayRange, onSelectDay: (Long) -> Unit) {
     val strings = LocalStrings.current
     val colors = MaterialTheme.colorScheme
     val epochDay = date.toEpochDay()
-    val inRange = epochDay in state.firstDay..state.today
+    val inRange = epochDay in state.firstDay..state.lastDay
     Box(
         Modifier
             .fillMaxSize()

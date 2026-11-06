@@ -3,7 +3,8 @@ package com.gympad.data
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-const val BACKUP_VERSION = 1
+/** Version 2 added food. Version 1 files still import, with an empty diary. */
+const val BACKUP_VERSION = 2
 
 @Serializable
 data class BackupFile(
@@ -16,6 +17,9 @@ data class BackupFile(
     val sessions: List<WorkoutSession>,
     val sessionExercises: List<SessionExercise>,
     val sets: List<SetEntry>,
+    val foods: List<Food> = emptyList(),
+    val foodEntries: List<FoodEntry> = emptyList(),
+    val nutritionGoals: NutritionGoals? = null,
 )
 
 enum class InvalidBackupReason { NOT_A_BACKUP, TOO_NEW, MISSING_ROUTINES }

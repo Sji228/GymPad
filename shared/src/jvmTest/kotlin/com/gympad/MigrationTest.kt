@@ -51,4 +51,29 @@ class MigrationTest {
         }
         migrated.close()
     }
+
+    @Test fun `version 2 data survives adding the food tables`() {
+        val helper = MigrationTestHelper(
+            schemaDirectoryPath = Path("schemas"),
+            databasePath = Path(tempFolder.root.absolutePath, "migration3.db"),
+            driver = BundledSQLiteDriver(),
+            databaseClass = GymDatabase::class,
+        )
+        helper.createDatabase(2).apply {
+            execSQL("INSERT INTO exercise (id, name) VALUES (1, 'Bench')")
+            execSQL("INSERT INTO routine (id, letter, name) VALUES (1, 'A', '')")
+            execSQL("INSERT INTO workout_session (id, epochDay, routineId, startedAt) VALUES (1, 100, 1, 0)")
+            close()
+        }
+        val migrated = helper.runMigrationsAndValidate(3)
+        migrated.prepare("SELECT COUNT(*) FROM workout_session").use { statement ->
+            statement.step()
+            assertEquals(1, statement.getInt(0))
+        }
+        migrated.execSQL(
+            "INSERT INTO food (id, name, kcal, protein, carbs, fat, archived) VALUES (1, 'Oats', 379, 13, 68, 6.5, 0)",
+        )
+        migrated.execSQL("INSERT INTO food_entry (epochDay, meal, foodId, grams, createdAt) VALUES (100, 0, 1, 80, 0)")
+        migrated.close()
+    }
 }

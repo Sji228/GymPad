@@ -20,13 +20,20 @@ import kotlinx.coroutines.IO
         WorkoutSession::class,
         SessionExercise::class,
         SetEntry::class,
+        Food::class,
+        FoodEntry::class,
+        NutritionGoals::class,
     ],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2, spec = DropSlotLabels::class)],
+    version = 3,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2, spec = DropSlotLabels::class),
+        AutoMigration(from = 2, to = 3),
+    ],
 )
 @ConstructedBy(GymDatabaseConstructor::class)
 abstract class GymDatabase : RoomDatabase() {
     abstract fun dao(): GymDao
+    abstract fun foodDao(): FoodDao
 }
 
 @DeleteColumn(tableName = "exercise_slot", columnName = "label")

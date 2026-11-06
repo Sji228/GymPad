@@ -1,6 +1,8 @@
 package com.gympad
 
 import android.app.Application
+import com.gympad.data.FoodCatalog
+import com.gympad.data.FoodRepository
 import com.gympad.data.GymRepository
 import com.gympad.data.LanguageStore
 import com.gympad.data.createGymDatabase
@@ -12,7 +14,11 @@ import java.time.Instant
 import java.time.ZoneId
 
 class GymPadApp : Application() {
-    val repository: GymRepository by lazy { GymRepository(createGymDatabase(this)) }
+    private val database by lazy { createGymDatabase(this) }
+    val repository: GymRepository by lazy { GymRepository(database) }
+
+    // The catalog copy can be rebuilt from the APK at any time, so it stays out of backups.
+    val foodRepository: FoodRepository by lazy { FoodRepository(database, FoodCatalog(noBackupFilesDir)) }
 
     val languageStore: LanguageStore by lazy {
         val preferences = getSharedPreferences("settings", MODE_PRIVATE)

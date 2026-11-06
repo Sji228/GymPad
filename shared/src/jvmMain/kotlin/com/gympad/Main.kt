@@ -5,6 +5,8 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import androidx.room.Room
+import com.gympad.data.FoodCatalog
+import com.gympad.data.FoodRepository
 import com.gympad.data.GymDatabase
 import com.gympad.data.GymRepository
 import com.gympad.data.LanguageStore
@@ -18,6 +20,7 @@ fun main() {
     val database = Room.databaseBuilder<GymDatabase>(name = File(dataDir, "gympad.db").absolutePath)
         .buildGymDatabase()
     val repository = GymRepository(database)
+    val foodRepository = FoodRepository(database, FoodCatalog(File(dataDir, "catalog")))
     val languageFile = File(dataDir, "language")
     val languageStore = object : LanguageStore {
         override fun load() = languageFile.takeIf { it.exists() }?.readText()
@@ -34,7 +37,7 @@ fun main() {
             title = "GymPad",
             state = rememberWindowState(width = 400.dp, height = 820.dp),
         ) {
-            GymPadRoot(repository, installEpochDay, languageStore)
+            GymPadRoot(repository, foodRepository, installEpochDay, languageStore)
         }
     }
 }

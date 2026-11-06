@@ -41,6 +41,10 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.camera.camera2)
+            implementation(libs.camera.view)
+            implementation(libs.camera.mlkit.vision)
+            implementation(libs.mlkit.barcode.scanning)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)

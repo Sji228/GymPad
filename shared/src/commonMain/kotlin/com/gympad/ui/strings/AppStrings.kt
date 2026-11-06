@@ -5,6 +5,10 @@ import com.gympad.data.Routine
 import com.gympad.domain.AppLanguage
 import com.gympad.domain.BuiltInNames
 import com.gympad.domain.LiftValue
+import com.gympad.domain.FoodItem
+import com.gympad.domain.Meal
+import com.gympad.domain.displayName
+import com.gympad.domain.formatAmount
 import com.gympad.domain.formatWeight
 import java.time.LocalDate
 
@@ -125,6 +129,67 @@ interface AppStrings {
     val backupTooNew: String
     val backupMissingRoutines: String
     val backupDamaged: String
+
+    val workout: String
+    val food: String
+    val mealNames: List<String>
+    val kcal: String
+    val protein: String
+    val carbs: String
+    val fat: String
+    val proteinShort: String
+    val carbsShort: String
+    val fatShort: String
+    fun kcalLeft(kcal: String): String
+    fun kcalOver(kcal: String): String
+    val setGoals: String
+    val goalsTitle: String
+    val goalsDetail: String
+    val caloriesGoal: String
+    fun gramsGoal(nutrient: String): String
+    val save: String
+    fun addFoodTo(meal: String): String
+    fun mealPhoto(meal: String): String
+    val photoComingSoon: String
+    val searchFood: String
+    val scanBarcode: String
+    val recent: String
+    val myFoods: String
+    val noResults: String
+    val emptyFoodList: String
+    val createFood: String
+    fun notInDatabase(code: String): String
+    val foodNameLabel: String
+    val brandLabel: String
+    val barcodeLabel: String
+    val optional: String
+    val per100g: String
+    val portionGramsLabel: String
+    val amount: String
+    val portion: String
+    val wholePackage: String
+    val lastTime: String
+    val add: String
+    val mealLabel: String
+    val removeEntry: String
+    fun removedEntry(name: String): String
+    val undo: String
+    fun copyMealFrom(day: String): String
+    val yesterday: String
+    val editFood: String
+    val archiveFood: String
+    val editFoodNote: String
+    fun editEntry(name: String): String
+    val legendOnTarget: String
+    val legendOffTarget: String
+    val legendNothingLogged: String
+    val catalogCredit: String
+    val cameraPermission: String
+    val allowCamera: String
+    val pointAtBarcode: String
+    val flashlight: String
+    val close: String
+    fun foodEntryCount(count: Int): String
 }
 
 fun AppStrings.localizeDecimal(number: String): String = number.replace('.', decimalSeparator)
@@ -165,4 +230,15 @@ fun AppStrings.exerciseName(name: String): String = BuiltInNames.exercise(name, 
 fun AppStrings.routineName(routine: Routine): String =
     BuiltInNames.routine(routine.name, language).ifBlank { routine.letter }
 
-fun AppStrings.backupSummary(workouts: Int, sets: Int): String = "${workoutCount(workouts)}, ${setCount(sets)}"
+fun AppStrings.backupSummary(workouts: Int, sets: Int, foodEntries: Int): String =
+    "${workoutCount(workouts)}, ${setCount(sets)}, ${foodEntryCount(foodEntries)}"
+
+fun AppStrings.mealName(meal: Meal): String = mealNames[meal.ordinal]
+
+fun AppStrings.kcalText(kcal: Double): String = "${Math.round(kcal)} ${this.kcal}"
+
+fun AppStrings.gramsText(grams: Double): String = "${localizeDecimal(formatAmount(grams))} g"
+
+fun AppStrings.amountText(value: Double): String = localizeDecimal(formatAmount(value))
+
+fun AppStrings.foodName(item: FoodItem): String = item.displayName(language)

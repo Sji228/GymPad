@@ -53,7 +53,7 @@ private const val NEW_VARIANT = -1L
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GymSheet(title: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
+fun GymSheet(title: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),

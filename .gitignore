@@ -20,3 +20,7 @@ keystore.properties
 dist/
 *.apk
 *.aab
+
+# Food catalog build tooling
+__pycache__/
+venv/
