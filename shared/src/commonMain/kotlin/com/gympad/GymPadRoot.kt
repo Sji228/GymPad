@@ -27,13 +27,15 @@ import com.gympad.ui.FoodScreen
 import com.gympad.ui.FoodViewModel
 import com.gympad.ui.MainScreen
 import com.gympad.ui.MainViewModel
+import com.gympad.ui.MeScreen
+import com.gympad.ui.MeViewModel
 import com.gympad.ui.MealPhotoViewModel
 import com.gympad.ui.strings.LocalStrings
 import com.gympad.ui.strings.strings
 import com.gympad.ui.theme.GymPadTheme
 import java.util.Locale
 
-private enum class Screen { MAIN, FOOD, EDITOR, BACKUP }
+private enum class Screen { MAIN, FOOD, ME, EDITOR, BACKUP }
 
 @Composable
 fun GymPadRoot(
@@ -72,7 +74,7 @@ private fun AppContent(
 ) {
     Surface {
         var screen by rememberSaveable { mutableStateOf(Screen.MAIN) }
-        // Routines and Backup return to whichever of Workout or Food they were opened from.
+        // Routines and Backup return to whichever of Workout, Food or Me they were opened from.
         var home by rememberSaveable { mutableStateOf(Destination.WORKOUT) }
         val mainViewModel = viewModel { MainViewModel(repository, installEpochDay) }
         val editorViewModel = viewModel { EditorViewModel(repository) }
@@ -84,7 +86,11 @@ private fun AppContent(
             foodViewModel.refreshToday()
             onPauseOrDispose { }
         }
-        fun homeScreen() = if (home == Destination.FOOD) Screen.FOOD else Screen.MAIN
+        fun homeScreen() = when (home) {
+            Destination.WORKOUT -> Screen.MAIN
+            Destination.FOOD -> Screen.FOOD
+            Destination.ME -> Screen.ME
+        }
         val drawer: @Composable (closeDrawer: () -> Unit) -> Unit = { closeDrawer ->
             AppDrawer(
                 current = home,
@@ -122,6 +128,14 @@ private fun AppContent(
             Screen.FOOD -> FoodScreen(
                 viewModel = foodViewModel,
                 mealPhoto = mealPhotoViewModel,
+                drawerContent = drawer,
+                onBack = {
+                    home = Destination.WORKOUT
+                    screen = Screen.MAIN
+                },
+            )
+            Screen.ME -> MeScreen(
+                viewModel = viewModel { MeViewModel(repository) },
                 drawerContent = drawer,
                 onBack = {
                     home = Destination.WORKOUT

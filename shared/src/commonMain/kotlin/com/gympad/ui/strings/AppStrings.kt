@@ -4,6 +4,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import com.gympad.data.AiError
 import com.gympad.data.Routine
 import com.gympad.domain.AppLanguage
+import com.gympad.domain.BodyMeasure
 import com.gympad.domain.BuiltInNames
 import com.gympad.domain.LiftValue
 import com.gympad.domain.FoodItem
@@ -227,6 +228,22 @@ interface AppStrings {
     val estimateFailed: String
     fun includeFood(name: String): String
     fun gramsOf(name: String): String
+
+    val me: String
+    /** In [BodyMeasure] order, height last. */
+    val measureNames: List<String>
+    val emptyMeasure: String
+    val bmiNeedsHeight: String
+    val bmiNeedsWeight: String
+    fun heightValue(height: String): String
+    val setHeight: String
+    val changeHeight: String
+    val dateLabel: String
+    val previousDay: String
+    val nextDay: String
+    fun changeSince(change: String, date: String): String
+    fun editMeasurement(name: String, date: String): String
+    fun measurementCount(count: Int): String
 }
 
 fun AppStrings.localizeDecimal(number: String): String = number.replace('.', decimalSeparator)
@@ -267,8 +284,16 @@ fun AppStrings.exerciseName(name: String): String = BuiltInNames.exercise(name, 
 fun AppStrings.routineName(routine: Routine): String =
     BuiltInNames.routine(routine.name, language).ifBlank { routine.letter }
 
-fun AppStrings.backupSummary(workouts: Int, sets: Int, foodEntries: Int): String =
-    "${workoutCount(workouts)}, ${setCount(sets)}, ${foodEntryCount(foodEntries)}"
+fun AppStrings.backupSummary(workouts: Int, sets: Int, foodEntries: Int, measurements: Int): String =
+    "${workoutCount(workouts)}, ${setCount(sets)}, ${foodEntryCount(foodEntries)}, ${measurementCount(measurements)}"
+
+fun AppStrings.measureName(measure: BodyMeasure): String = measureNames[measure.ordinal]
+
+/** "82.4 kg", "24.1" for BMI, which has no unit. */
+fun AppStrings.measureText(measure: BodyMeasure, value: Double): String {
+    val number = localizeDecimal(formatAmount(value))
+    return if (measure.unit.isEmpty()) number else if (measure.unit == "%") "$number%" else "$number ${measure.unit}"
+}
 
 fun AppStrings.mealName(meal: Meal): String = mealNames[meal.ordinal]
 

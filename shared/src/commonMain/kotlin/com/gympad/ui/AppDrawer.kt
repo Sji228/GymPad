@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.gympad.domain.AppLanguage
 import com.gympad.ui.strings.LocalStrings
 
-enum class Destination { WORKOUT, FOOD }
+enum class Destination { WORKOUT, FOOD, ME }
 
 @Composable
 fun AppDrawer(
@@ -57,13 +57,14 @@ fun AppDrawer(
             modifier = Modifier.padding(start = 24.dp, top = 20.dp, bottom = 16.dp).semantics { heading() },
         )
         DrawerItem(strings.workout, GymIcons.Dumbbell, current == Destination.WORKOUT) { onNavigate(Destination.WORKOUT) }
-        DrawerItem(strings.routines, GymIcons.Routines, selected = false, onClick = onRoutines)
         DrawerItem(strings.food, GymIcons.Food, current == Destination.FOOD) { onNavigate(Destination.FOOD) }
-        DrawerItem(strings.aiPhotos, GymIcons.Camera, selected = false, onClick = onAiPhotos)
+        DrawerItem(strings.me, GymIcons.Person, current == Destination.ME) { onNavigate(Destination.ME) }
         HorizontalDivider(
             Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             color = colors.outlineVariant,
         )
+        DrawerItem(strings.routines, GymIcons.Routines, selected = false, onClick = onRoutines)
+        DrawerItem(strings.aiPhotos, GymIcons.Key, selected = false, onClick = onAiPhotos)
         DrawerItem(strings.backup, GymIcons.Export, selected = false, onClick = onBackup)
         Spacer(Modifier.weight(1f))
         SectionLabel(strings.languageLabel, Modifier.padding(start = 24.dp, bottom = 8.dp))

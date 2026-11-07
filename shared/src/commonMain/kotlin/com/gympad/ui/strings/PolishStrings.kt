@@ -102,7 +102,7 @@ object PolishStrings : AppStrings {
     override fun moveDown(name: String) = "Przesuń w dół: $name"
 
     override val exportTitle = "Eksportuj"
-    override val exportDetail = "Zapisz wszystkie plany, treningi i dziennik jedzenia do pliku JSON."
+    override val exportDetail = "Zapisz wszystkie plany, treningi, dziennik jedzenia i pomiary do pliku JSON."
     override val importTitle = "Importuj"
     override val importDetail = "Zastąp wszystko w aplikacji danymi z pliku kopii."
     override val replaceTitle = "Zastąpić wszystkie dane?"
@@ -140,7 +140,7 @@ object PolishStrings : AppStrings {
     override fun mealPhoto(meal: String) = "Zdjęcie posiłku: $meal"
     override val searchFood = "Szukaj lub wpisz kod kreskowy"
     override val scanBarcode = "Skanuj kod kreskowy"
-    override val recent = "Ostatnie"
+    override val recent = "Historia"
     override val myFoods = "Moje produkty"
     override val noResults = "Nic nie znaleziono. Sprawdź pisownię albo utwórz produkt samodzielnie."
     override val emptyFoodList = "Wyszukaj produkt lub zeskanuj jego kod. Dodane produkty pojawią się tutaj, by dodać je jednym dotknięciem."
@@ -178,7 +178,7 @@ object PolishStrings : AppStrings {
     override val close = "Zamknij"
     override fun foodEntryCount(count: Int) = "$count " + polishPlural(count, "wpis", "wpisy", "wpisów") + " w dzienniku"
 
-    override val aiPhotos = "Zdjęcia posiłków AI"
+    override val aiPhotos = "Twój klucz API"
     override val aiSetupTitle = "Zdjęcia posiłków z Gemini"
     override val aiSetupIntro = "Zrób zdjęcie posiłku, a Gemini od Google oszacuje, co jest na talerzu: produkty, ich wagę, kalorie i makroskładniki. Potrzebny jest Twój własny klucz API, który jest darmowy:"
     override val aiSetupSteps = listOf(
@@ -219,4 +219,22 @@ object PolishStrings : AppStrings {
     override val estimateFailed = "Nie udało się oszacować"
     override fun includeFood(name: String) = "Uwzględnij: $name"
     override fun gramsOf(name: String) = "$name, gramy"
+
+    override val me = "Pomiary"
+    override val measureNames = listOf(
+        "Masa ciała", "Szyja/kark", "Klatka piersiowa", "Talia", "Brzuch", "Biodra", "Udo", "Łydka", "Ramię/biceps",
+        "Zawartość tłuszczu", "BMI", "Wzrost",
+    )
+    override val emptyMeasure = "Brak pomiarów. Dodaj pierwszy, a tutaj pojawi się wykres."
+    override val bmiNeedsHeight = "Wpisz raz swój wzrost, a BMI policzy się z każdej zapisanej masy ciała."
+    override val bmiNeedsWeight = "Zapisz masę ciała, a pojawi się tu Twoje BMI."
+    override fun heightValue(height: String) = "Wzrost: $height"
+    override val setHeight = "Ustaw wzrost"
+    override val changeHeight = "Zmień wzrost"
+    override val dateLabel = "Data"
+    override val previousDay = "Poprzedni dzień"
+    override val nextDay = "Następny dzień"
+    override fun changeSince(change: String, date: String) = "$change od $date"
+    override fun editMeasurement(name: String, date: String) = "Edytuj: $name, $date"
+    override fun measurementCount(count: Int) = "$count " + polishPlural(count, "pomiar", "pomiary", "pomiarów")
 }

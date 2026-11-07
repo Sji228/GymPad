@@ -76,4 +76,25 @@ class MigrationTest {
         migrated.execSQL("INSERT INTO food_entry (epochDay, meal, foodId, grams, createdAt) VALUES (100, 0, 1, 80, 0)")
         migrated.close()
     }
+
+    @Test fun `version 3 data survives adding measurements`() {
+        val helper = MigrationTestHelper(
+            schemaDirectoryPath = Path("schemas"),
+            databasePath = Path(tempFolder.root.absolutePath, "migration4.db"),
+            driver = BundledSQLiteDriver(),
+            databaseClass = GymDatabase::class,
+        )
+        helper.createDatabase(3).apply {
+            execSQL("INSERT INTO food (id, name, kcal, protein, carbs, fat, archived) VALUES (1, 'Oats', 379, 13, 68, 6.5, 0)")
+            execSQL("INSERT INTO food_entry (epochDay, meal, foodId, grams, createdAt) VALUES (100, 0, 1, 80, 0)")
+            close()
+        }
+        val migrated = helper.runMigrationsAndValidate(4)
+        migrated.prepare("SELECT grams FROM food_entry").use { statement ->
+            statement.step()
+            assertEquals(80.0, statement.getDouble(0), 0.0)
+        }
+        migrated.execSQL("INSERT INTO measurement (kind, epochDay, value) VALUES ('weight', 100, 82.4)")
+        migrated.close()
+    }
 }

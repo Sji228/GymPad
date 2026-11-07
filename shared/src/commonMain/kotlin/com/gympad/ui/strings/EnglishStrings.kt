@@ -92,7 +92,7 @@ object EnglishStrings : AppStrings {
     override fun moveDown(name: String) = "Move $name down"
 
     override val exportTitle = "Export"
-    override val exportDetail = "Save all routines, workouts and your food diary to a JSON file."
+    override val exportDetail = "Save all routines, workouts, your food diary and measurements to a JSON file."
     override val importTitle = "Import"
     override val importDetail = "Replace everything in the app with a backup file."
     override val replaceTitle = "Replace all data?"
@@ -130,7 +130,7 @@ object EnglishStrings : AppStrings {
     override fun mealPhoto(meal: String) = "Photo of $meal"
     override val searchFood = "Search, or type a barcode"
     override val scanBarcode = "Scan barcode"
-    override val recent = "Recent"
+    override val recent = "History"
     override val myFoods = "My foods"
     override val noResults = "Nothing found. Check the spelling, or create the food yourself."
     override val emptyFoodList = "Search for a food or scan its barcode. Foods you log show up here for one-tap adding."
@@ -168,7 +168,7 @@ object EnglishStrings : AppStrings {
     override val close = "Close"
     override fun foodEntryCount(count: Int) = if (count == 1) "1 food entry" else "$count food entries"
 
-    override val aiPhotos = "AI meal photos"
+    override val aiPhotos = "Your API key"
     override val aiSetupTitle = "Meal photos with Gemini"
     override val aiSetupIntro = "Take a photo of your meal and Google's Gemini estimates what's on the plate: the foods, their weight, calories and macros. It needs your own API key, which is free:"
     override val aiSetupSteps = listOf(
@@ -209,4 +209,21 @@ object EnglishStrings : AppStrings {
     override val estimateFailed = "Couldn't estimate"
     override fun includeFood(name: String) = "Include $name"
     override fun gramsOf(name: String) = "$name, grams"
+
+    override val me = "Me"
+    override val measureNames = listOf(
+        "Body weight", "Neck", "Chest", "Waist", "Belly", "Hips", "Thigh", "Calf", "Arm/biceps", "Body fat", "BMI", "Height",
+    )
+    override val emptyMeasure = "Nothing logged yet. Add your first measurement and the chart starts here."
+    override val bmiNeedsHeight = "Enter your height once, and BMI is worked out from every body weight you log."
+    override val bmiNeedsWeight = "Log your body weight and your BMI shows up here."
+    override fun heightValue(height: String) = "Height: $height"
+    override val setHeight = "Set height"
+    override val changeHeight = "Change height"
+    override val dateLabel = "Date"
+    override val previousDay = "Previous day"
+    override val nextDay = "Next day"
+    override fun changeSince(change: String, date: String) = "$change since $date"
+    override fun editMeasurement(name: String, date: String) = "Edit $name on $date"
+    override fun measurementCount(count: Int) = if (count == 1) "1 measurement" else "$count measurements"
 }

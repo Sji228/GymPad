@@ -20,6 +20,8 @@ object GymIcons {
     val Check = strokeIcon("check", "M20 6 9 17l-5-5", width = 2.6f)
     val ChevronDown = strokeIcon("chevron-down", "m6 9 6 6 6-6")
     val ChevronUp = strokeIcon("chevron-up", "m18 15-6-6-6 6")
+    val ChevronLeft = strokeIcon("chevron-left", "m15 18-6-6 6-6")
+    val ChevronRight = strokeIcon("chevron-right", "m9 18 6-6-6-6")
     val Plus = strokeIcon("plus", "M5 12h14", "M12 5v14")
     val Minus = strokeIcon("minus", "M5 12h14")
     val Close = strokeIcon("close", "M18 6 6 18", "M6 6l12 12")
@@ -55,6 +57,12 @@ object GymIcons {
         "camera",
         "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z",
         "M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+    )
+    val Person = strokeIcon("person", "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z")
+    val Key = strokeIcon(
+        "key",
+        "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z",
+        "M16.5 7.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z",
     )
     val Gallery = strokeIcon(
         "gallery",

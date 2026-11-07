@@ -47,8 +47,8 @@ import java.io.IOException
 import java.time.LocalDate
 
 sealed interface BackupMessage {
-    data class Exported(val workouts: Int, val sets: Int, val foodEntries: Int) : BackupMessage
-    data class Restored(val workouts: Int, val sets: Int, val foodEntries: Int) : BackupMessage
+    data class Exported(val workouts: Int, val sets: Int, val foodEntries: Int, val measurements: Int) : BackupMessage
+    data class Restored(val workouts: Int, val sets: Int, val foodEntries: Int, val measurements: Int) : BackupMessage
     data class Invalid(val reason: InvalidBackupReason) : BackupMessage
     data object ExportFailed : BackupMessage
     data object ImportFailed : BackupMessage
@@ -69,7 +69,7 @@ class BackupViewModel(private val repository: GymRepository) : ViewModel() {
             _uiState.value = try {
                 val backup = repository.exportBackup()
                 withContext(Dispatchers.IO) { writeFile(backup.encode()) }
-                BackupUiState(message = BackupMessage.Exported(backup.sessions.size, backup.sets.size, backup.foodEntries.size))
+                BackupUiState(message = BackupMessage.Exported(backup.sessions.size, backup.sets.size, backup.foodEntries.size, backup.measurements.size))
             } catch (_: IOException) {
                 BackupUiState(message = BackupMessage.ExportFailed)
             }
@@ -94,7 +94,7 @@ class BackupViewModel(private val repository: GymRepository) : ViewModel() {
         viewModelScope.launch {
             _uiState.value = try {
                 repository.replaceAllData(backup)
-                BackupUiState(message = BackupMessage.Restored(backup.sessions.size, backup.sets.size, backup.foodEntries.size))
+                BackupUiState(message = BackupMessage.Restored(backup.sessions.size, backup.sets.size, backup.foodEntries.size, backup.measurements.size))
             } catch (_: SQLiteException) {
                 BackupUiState(message = BackupMessage.Damaged)
             }
@@ -107,8 +107,8 @@ class BackupViewModel(private val repository: GymRepository) : ViewModel() {
 }
 
 private fun AppStrings.text(message: BackupMessage): String = when (message) {
-    is BackupMessage.Exported -> exported(backupSummary(message.workouts, message.sets, message.foodEntries))
-    is BackupMessage.Restored -> restored(backupSummary(message.workouts, message.sets, message.foodEntries))
+    is BackupMessage.Exported -> exported(backupSummary(message.workouts, message.sets, message.foodEntries, message.measurements))
+    is BackupMessage.Restored -> restored(backupSummary(message.workouts, message.sets, message.foodEntries, message.measurements))
     is BackupMessage.Invalid -> when (message.reason) {
         InvalidBackupReason.NOT_A_BACKUP -> backupNotRecognized
         InvalidBackupReason.TOO_NEW -> backupTooNew
@@ -169,7 +169,7 @@ fun BackupScreen(viewModel: BackupViewModel, onBack: () -> Unit) {
             title = { Text(strings.replaceTitle, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Text(
-                    strings.replaceDetail(strings.backupSummary(backup.sessions.size, backup.sets.size, backup.foodEntries.size)),
+                    strings.replaceDetail(strings.backupSummary(backup.sessions.size, backup.sets.size, backup.foodEntries.size, backup.measurements.size)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
                 )

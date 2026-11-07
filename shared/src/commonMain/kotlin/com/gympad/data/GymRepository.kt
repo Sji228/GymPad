@@ -20,6 +20,7 @@ data class SetTarget(
 class GymRepository(private val db: GymDatabase) {
     private val dao = db.dao()
     private val foodDao = db.foodDao()
+    private val measurementDao = db.measurementDao()
 
     // Keystrokes must land in the order they were typed, and two quick edits must not both
     // try to create today's session.
@@ -191,6 +192,16 @@ class GymRepository(private val db: GymDatabase) {
         if (!taken) dao.update(dao.getExercise(exerciseId).copy(name = canonical))
     }
 
+    fun observeMeasurements() = measurementDao.observeAll()
+
+    /** Saving on a day that already has this measurement replaces it, so there's one point per day. */
+    suspend fun saveMeasurement(kind: String, epochDay: Long, value: Double, replacingId: Long? = null) = write {
+        if (replacingId != null) measurementDao.delete(replacingId)
+        measurementDao.put(Measurement(kind = kind, epochDay = epochDay, value = value))
+    }
+
+    suspend fun deleteMeasurement(id: Long) = write { measurementDao.delete(id) }
+
     suspend fun exportBackup(): BackupFile = write {
         BackupFile(
             exportedAt = System.currentTimeMillis(),
@@ -204,6 +215,7 @@ class GymRepository(private val db: GymDatabase) {
             foods = foodDao.allFoods(),
             foodEntries = foodDao.allEntries(),
             nutritionGoals = foodDao.goals(),
+            measurements = measurementDao.all(),
         )
     }
 
@@ -212,6 +224,7 @@ class GymRepository(private val db: GymDatabase) {
         foodDao.clearEntries()
         foodDao.clearFoods()
         foodDao.clearGoals()
+        measurementDao.clear()
         dao.clearSets()
         dao.clearSessionExercises()
         dao.clearSessions()
@@ -229,5 +242,6 @@ class GymRepository(private val db: GymDatabase) {
         foodDao.insertFoods(backup.foods)
         foodDao.insertEntries(backup.foodEntries)
         backup.nutritionGoals?.let { foodDao.upsert(it) }
+        measurementDao.insertAll(backup.measurements)
     }
 }

@@ -22,8 +22,8 @@ android {
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
         }
-        versionCode = 7
-        versionName = "1.3.1"
+        versionCode = 8
+        versionName = "1.4.0"
     }
 
     signingConfigs {

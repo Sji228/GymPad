@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -52,6 +53,7 @@ import com.gympad.domain.BuiltInNames
 import com.gympad.domain.Meal
 import com.gympad.domain.toTemplate
 import com.gympad.ui.LocalMealCamera
+import com.gympad.ui.strings.EnglishStrings
 import com.gympad.ui.strings.PolishStrings
 import com.gympad.ui.strings.fullDateText
 import java.awt.image.BufferedImage
@@ -83,8 +85,8 @@ class AppFlowTest {
 
     private fun SkikoComposeUiTest.await(condition: () -> Boolean) = waitUntil(timeoutMillis = 8_000, condition = condition)
 
-    private fun SkikoComposeUiTest.awaitText(text: String) = await {
-        onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+    private fun SkikoComposeUiTest.awaitText(text: String, substring: Boolean = false) = await {
+        onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty()
     }
 
     private fun SkikoComposeUiTest.awaitDescription(text: String) = await {
@@ -686,5 +688,123 @@ class AppFlowTest {
             shot("ai_05_bad_key")
             assertEquals(null, aiSettings.key)
         }
+    }
+
+    private fun SkikoComposeUiTest.openMe(label: String = "Me") {
+        tap("Menu")
+        awaitText(label)
+        onNodeWithText(label).performClick()
+        waitForIdle()
+    }
+
+    @Test fun `menu lists screens first, then settings`() = app {
+        tap("Menu")
+        awaitText("Your API key")
+        waitForIdle()
+        shot("me_00_drawer")
+        val order = listOf("Workout", "Food", "Me", "Routines", "Your API key", "Backup")
+        val tops = order.map { label -> onNodeWithText(label).fetchSemanticsNode().boundsInRoot.top }
+        assertEquals(tops.sorted(), tops)
+    }
+
+    @Test fun `measurements are logged per day and charted`() = app(
+        prepare = {
+            it.saveMeasurement("waist", today - 30, 88.0)
+            it.saveMeasurement("waist", today - 14, 86.5)
+            it.saveMeasurement("waist", today - 3, 85.0)
+        },
+    ) { repository ->
+        openMe()
+        awaitText("Body weight")
+        onNodeWithText("Waist").performClick()
+        awaitText("85 cm")
+        awaitText("−3 cm since ${LocalDate.ofEpochDay(today - 30).dayOfMonth} ${LocalDate.ofEpochDay(today - 30).month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.ENGLISH)}")
+        shot("me_01_waist_chart")
+
+        onNodeWithText("Add").performClick()
+        awaitDescription("Waist")
+        type("Waist", "84,5")
+        waitForIdle()
+        shot("me_02_add")
+        onNodeWithText("Save").performClick()
+        awaitText("84.5 cm")
+        val waist = runBlocking { repository.observeMeasurements().first() }.filter { it.kind == "waist" }
+        assertEquals(4, waist.size)
+        assertEquals(84.5, waist.single { it.epochDay == today }.value, 0.0)
+
+        // Saving again on the same day replaces that day's value.
+        onNodeWithText("Add").performClick()
+        type("Waist", "84")
+        onNodeWithText("Save").performClick()
+        await { runBlocking { repository.observeMeasurements().first() }.count { it.kind == "waist" } == 4 }
+
+        // Past entries can be fixed or removed.
+        onNodeWithText(EnglishStrings.fullDateText(LocalDate.ofEpochDay(today - 14))).performClick()
+        awaitText("Remove")
+        onNodeWithText("Remove").performClick()
+        await { runBlocking { repository.observeMeasurements().first() }.count { it.kind == "waist" } == 3 }
+    }
+
+    @Test fun `BMI is worked out from height and body weight`() = app(
+        prepare = {
+            it.saveMeasurement("weight", today - 20, 86.0)
+            it.saveMeasurement("weight", today - 2, 83.2)
+        },
+    ) {
+        openMe()
+        onNodeWithText("BMI").performClick()
+        awaitText("Enter your height once, and BMI is worked out from every body weight you log.")
+        onNodeWithText("Set height").performClick()
+        awaitDescription("Height")
+        type("Height", "182")
+        onNodeWithText("Save").performClick()
+        awaitText("25.1")
+        awaitText("Height: 182 cm")
+        shot("me_03_bmi")
+    }
+
+    @Test fun `Me renders in Polish`() = app(
+        prepare = {
+            it.saveMeasurement("weight", today - 40, 88.0)
+            it.saveMeasurement("weight", today - 25, 86.4)
+            it.saveMeasurement("weight", today - 10, 85.1)
+            it.saveMeasurement("weight", today, 84.3)
+        },
+    ) {
+        switchLanguage("Polski")
+        openMe("Pomiary")
+        awaitText("Zawartość tłuszczu")
+        awaitText("84,3 kg")
+        shot("pl_me_01_weight")
+    }
+
+    @Test fun `food history keeps the last hundred foods and the totals stay pinned`() = app(
+        prepare = {
+            food.setGoals(NutritionGoals(kcal = 2500, protein = 160, carbs = 280, fat = 80))
+            listOf("apple", "banana", "oats", "egg", "white rice dry", "chicken breast raw", "salmon raw", "tofu", "almonds",
+                "walnuts", "milk 2", "butter", "honey", "carrot", "tomato", "cucumber", "broccoli", "spinach", "pear", "kiwi",
+                "plum", "peach", "grapes", "avocado", "rye bread", "potatoes boiled", "pasta cooked", "cod raw")
+                .forEachIndexed { i, query -> logFood(query, Meal.entries[i % Meal.entries.size], 100.0) }
+        },
+    ) {
+        assertEquals(28, runBlocking { food.observeRecent().first() }.size)
+        openFood()
+        awaitText("Protein")
+        onAllNodes(hasScrollToNodeAction()).onFirst().performScrollToNode(hasText("Supper"))
+        waitForIdle()
+        awaitText("2500 kcal", substring = true)
+        shot("food_09_pinned_totals")
+        tap("Add to Supper")
+        awaitText("HISTORY")
+        awaitText("Cod, raw")
+    }
+
+    @Test fun `backup carries measurements`() = app(
+        prepare = { it.saveMeasurement("chest", today - 1, 104.0) },
+    ) { repository ->
+        val before = repository.exportBackup()
+        assertEquals(1, before.measurements.size)
+        repository.replaceAllData(decodeBackup(before.encode()))
+        assertEquals(before.measurements, repository.exportBackup().measurements)
     }
 }

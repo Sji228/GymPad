@@ -157,3 +157,13 @@ data class NutritionGoals(
     val carbs: Int? = null,
     val fat: Int? = null,
 )
+
+/** One body measurement on one day; logging the same one again that day replaces it. */
+@Serializable
+@Entity(tableName = "measurement", indices = [Index(value = ["kind", "epochDay"], unique = true)])
+data class Measurement(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val kind: String,
+    val epochDay: Long,
+    val value: Double,
+)

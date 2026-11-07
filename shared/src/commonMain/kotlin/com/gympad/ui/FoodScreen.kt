@@ -130,11 +130,14 @@ fun FoodScreen(
                         item(key = "ribbon") {
                             WeekRibbon(state = days, onSelectDay = viewModel::selectDay)
                         }
-                        item(key = "summary") {
+                        // Pinned below the top bar, so the day's totals stay in view while scrolling to supper.
+                        stickyHeader(key = "summary") {
                             DaySummary(
                                 state = state,
                                 onEditGoals = { editingGoals = true },
-                                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
                             )
                         }
                         items(state.meals, key = { it.meal.name }) { meal ->
@@ -264,6 +267,7 @@ private fun DaySummary(state: FoodUiState, onEditGoals: () -> Unit, modifier: Mo
             .clickable(role = Role.Button, onClickLabel = strings.goalsTitle, onClick = onEditGoals)
             .padding(16.dp),
     ) {
+        // The bars always show; without a goal they stay empty and the card offers to set one.
         Row(verticalAlignment = Alignment.Bottom) {
             Text(totals.kcal.roundToInt().toString(), style = MaterialTheme.typography.headlineSmall)
             Text(
@@ -287,15 +291,13 @@ private fun DaySummary(state: FoodUiState, onEditGoals: () -> Unit, modifier: Mo
                 )
             }
         }
-        if (kcalGoal != null) {
-            Spacer(Modifier.height(10.dp))
-            Progress(totals.kcal, kcalGoal.toDouble(), height = 6)
-        }
+        Spacer(Modifier.height(10.dp))
+        Progress(totals.kcal, kcalGoal?.toDouble(), height = 6)
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MacroColumn(strings.protein, totals.protein, goals.protein, Modifier.weight(1f))
-            MacroColumn(strings.carbs, totals.carbs, goals.carbs, Modifier.weight(1f))
             MacroColumn(strings.fat, totals.fat, goals.fat, Modifier.weight(1f))
+            MacroColumn(strings.carbs, totals.carbs, goals.carbs, Modifier.weight(1f))
         }
     }
 }
@@ -311,17 +313,15 @@ private fun MacroColumn(label: String, grams: Double, goal: Int?, modifier: Modi
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
         )
-        if (target != null) {
-            Spacer(Modifier.height(6.dp))
-            Progress(grams, target.toDouble(), height = 4)
-        }
+        Spacer(Modifier.height(6.dp))
+        Progress(grams, target?.toDouble(), height = 4)
     }
 }
 
 @Composable
-private fun Progress(value: Double, goal: Double, height: Int) {
+private fun Progress(value: Double, goal: Double?, height: Int) {
     val colors = MaterialTheme.colorScheme
-    val over = value > goal * 1.1
+    val over = goal != null && value > goal * 1.1
     Box(
         Modifier
             .fillMaxWidth()
@@ -331,7 +331,7 @@ private fun Progress(value: Double, goal: Double, height: Int) {
     ) {
         Box(
             Modifier
-                .fillMaxWidth((value / goal).coerceIn(0.0, 1.0).toFloat())
+                .fillMaxWidth(if (goal == null || goal <= 0) 0f else (value / goal).coerceIn(0.0, 1.0).toFloat())
                 .height(height.dp)
                 .clip(CircleShape)
                 .background(if (over) PartialYellow else colors.primary),

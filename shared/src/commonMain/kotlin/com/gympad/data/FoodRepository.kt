@@ -43,7 +43,8 @@ class FoodRepository(private val db: GymDatabase, private val catalog: FoodCatal
     fun observeFirstEntryDay() = dao.observeFirstEntryDay()
     fun observeGoals(): Flow<NutritionGoals> = dao.observeGoals().map { it ?: NutritionGoals() }
 
-    fun observeRecent(limit: Int = 20): Flow<List<FoodItem>> =
+    /** The food history shown when adding: each food once, newest first. */
+    fun observeRecent(limit: Int = 100): Flow<List<FoodItem>> =
         dao.observeRecentFoods(limit).map { rows -> rows.map { it.food.toItem(it.lastGrams) } }
 
     fun observeOwnFoods(): Flow<List<FoodItem>> =
