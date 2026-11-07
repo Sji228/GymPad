@@ -1,122 +1,77 @@
 # GymPad
 
-A minimalist, offline gym workout tracker and food diary for Android. No accounts, no cloud, no social feed: just your sets and meals, fast enough to log with sweaty hands between sets.
+A gym log and food diary for Android that I made for myself and my friends. It works offline, you don't need an account, and it's in English and Polish.
 
-Available in English and Polish.
+| Workout | Variants | History |
+|---|---|---|
+| ![Logging sets](docs/screenshots/logging.png) | ![Exercise variants](docs/screenshots/variants.png) | ![Year calendar](docs/screenshots/history.png) |
+| **Food** | **Me** | **Polski** |
+| ![Food diary](docs/screenshots/food.png) | ![Waist measurements chart](docs/screenshots/measurements.png) | ![The app in Polish](docs/screenshots/polish.png) |
 
-| Logging | Variants | History | Polski |
-|---|---|---|---|
-| ![Logged sets](docs/screenshots/logging.png) | ![Editing an exercise's variants](docs/screenshots/variants.png) | ![Year history](docs/screenshots/history.png) | ![The app in Polish, with ghost values from the last workout](docs/screenshots/polish.png) |
+## Download
 
-## Features
+Open this link on your phone to download the latest version:
 
-- **One-tap logging.** Each set shows what you lifted last time, by set number, as a gray ghost value, so straight sets and pyramids both work. If you repeat it, one tap on ✓ logs it.
-- **±2.5 kg steppers** next to the weight, so small jumps don't need the keyboard.
-- **Named variants.** Bench taken? Swap to the dumbbell or machine variant right on the card. Each variant keeps its own history and PR.
-- **Last time and PR** on every card, so you can see at a glance how you compare.
-- **Date ribbon and year history.** Green means complete, yellow means incomplete, gray means rest. Past days are read-only, so they can't be edited by accident.
-- **Five nameable routines**, with exercises, variants and set counts you can edit.
-- **JSON backup and restore** through the system file picker.
+**[GymPad.apk](https://github.com/Sji228/GymPad/releases/latest/download/GymPad.apk)**
+
+Older versions are on the [releases page](https://github.com/Sji228/GymPad/releases). The first time you install, Android asks you to allow installing apps from your browser. Play Protect might also say it doesn't know the developer; tap "More details" and then "Install anyway". New versions install over the old one and keep your data. You need Android 8.0 or newer.
+
+## What it does
+
+### Workouts
+
+Each set shows what you lifted last time in grey. If you're doing the same again, one tap on ✓ logs it, and the ±2.5 kg buttons next to the weight save you from opening the keyboard for small jumps.
+
+An exercise can have variants, like barbell bench, dumbbell bench and the chest press machine. When the bench is taken you switch to another one right on the card, and each variant keeps its own history and PR. There are five routines you can rename and edit, a week strip at the top, and a calendar for the whole year: green is a finished workout, yellow a half-finished one.
 
 ### Food
 
-- **Five meals a day:** breakfast, brunch, lunch, snacks and supper, with calories, protein, carbs and fat for each meal and the whole day.
-- **Daily goals** for calories and each macro, all optional. Days within 10% of the calorie goal turn green on the ribbon.
-- **Scan a barcode** with the camera, or search by name in English or Polish. About 35,000 products sold in Poland and 90 basic foods like chicken, rice and fruit are built in and work offline.
-- **Your own foods.** Anything missing, you enter once from the label; a scanned barcode is remembered for next time.
-- **One tap to repeat.** Recent foods remember the amount you last ate, and an empty meal offers to copy the same meal from the day before.
-- **Any day is editable,** including past days you forgot to log and future days you plan ahead.
-- **Meal photos with AI.** Snap your plate, optionally add a note like "fried in olive oil", and Google's Gemini estimates each food's weight, calories and macros. You check the list, fix any amount, and add it to the meal in one tap. It uses your own free Gemini API key; the app walks you through getting one.
+Five meals a day with calories, protein, fat and carbs. If you set daily goals, the bars at the top fill up as you eat, and they stay there while you scroll.
 
-## Your data
+You can scan a barcode or search by name. Around 35,000 products sold in Poland and about 90 basic foods (chicken, rice, eggs, fruit and so on) are built into the app, so it works without internet. If a product is missing, you type it in from the label once and the barcode is remembered. When adding food you see the last 100 things you ate, with the amount from last time. Any day can be edited, so you can add yesterday's dinner or plan tomorrow.
 
-Everything stays on your device. There is no server and no account. The app asks for two permissions:
+### Meal photos
 
-- **Camera,** for reading barcodes and taking meal photos. Barcodes are read on the phone.
-- **Internet,** only for meal photos. A photo and your note go straight from your phone to Google's Gemini API with your own key, and nowhere else. On Gemini's free tier, Google may use them to improve its products. Everything else works offline.
+The camera button next to a meal sends a photo, plus an optional note like "fried in olive oil", to Google's Gemini. It guesses the foods, their weight, calories and macros, then you check the list, fix anything that's off and add it to the meal. This needs your own Gemini API key, which is free from Google AI Studio. The app shows you how to get one the first time you tap the camera.
 
-The Gemini key is stored on the device and is never included in backups.
+### Me
 
-Switching language never touches your training data. History, PRs and ghost values follow an exercise's internal ID rather than its name, so changing language writes nothing to the database:
+Body weight, neck, chest, waist, belly, hips, thigh, calf, arm, body fat and BMI, each with its own chart. BMI is worked out from your weight and height, so you only enter your height once.
 
-- **Built-in exercises** are stored under one canonical name and translated only for display.
-- **Names you type** are your own data and are never translated.
-- **Typing a built-in's name in either language** reaches the same exercise, so one lift can't split into two histories.
-- **Backups** are language-independent: export in one language, restore in the other.
+## Privacy
 
-## Building
+Everything is stored on the phone and there's no server. The app asks for two permissions: the camera, for barcodes and meal photos, and the internet, which is only used to send meal photos to Gemini with your key. On Gemini's free tier, Google may use those photos to improve its products. Barcode scanning uses Google's ML Kit, which can send Google anonymous usage statistics.
 
-You need Java 17 or newer to run Gradle, plus the Android SDK for Android builds. Point Gradle at the SDK with `ANDROID_HOME` or a `local.properties` file containing `sdk.dir=/path/to/sdk`. Gradle downloads the JDK 21 used for compiling on its own.
+Backup in the menu saves everything to a JSON file wherever you choose. The API key is never included.
 
-Preview the app in a desktop window, with changes reloading live:
+## Building it yourself
+
+It's written in Kotlin with Compose Multiplatform and Room. You need Java 17 or newer and the Android SDK (set `ANDROID_HOME`, or `sdk.dir` in `local.properties`). Gradle downloads JDK 21 for compiling by itself.
+
+Run the app in a desktop window, reloading as you edit:
 
 ```bash
 ./gradlew :shared:hotRunJvm --auto --mainClass com.gympad.MainKt
 ```
 
-Run the tests. They drive the real UI against a real database, and write screenshots to `shared/build/screens/`:
+Run the tests. They click through the real UI and save screenshots to `shared/build/screens/`:
 
 ```bash
 ./gradlew :shared:jvmTest
 ```
 
-Build an installable debug APK, which needs no signing setup:
+Build a debug APK, which doesn't need a signing key:
 
 ```bash
 ./gradlew :app:assembleDebug
 ```
 
-### Release builds
+For a signed release, put your keystore in `keystore/` together with a `keystore.properties` file (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`), then run `./gradlew apk` and the APK ends up in `dist/`. Keep a copy of the keystore somewhere safe, because Android only installs updates signed with the same key.
 
-Create a signing key. It isn't committed to the repository, so keep a backup: Android only installs updates signed with the same key.
+The food catalog is generated by [`tools/catalog/build_catalog.py`](tools/catalog/build_catalog.py) from Open Food Facts and USDA data. How to run it is explained at the top of the script.
 
-```bash
-mkdir -p keystore
-keytool -genkeypair -keystore keystore/gympad-release.jks -alias gympad -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=GymPad"
-```
-
-Then create `keystore/keystore.properties`:
-
-```properties
-storeFile=keystore/gympad-release.jks
-storePassword=your-password
-keyAlias=gympad
-keyPassword=your-password
-```
-
-Build the signed APK into `dist/GymPad.apk`:
-
-```bash
-./gradlew apk
-```
-
-### Food catalog
-
-The product catalog ships with the app, built from public data by [`tools/catalog/build_catalog.py`](tools/catalog/build_catalog.py). Rebuild it to pick up new products; the instructions are at the top of the script. Basic foods are listed in [`basic_foods.tsv`](tools/catalog/basic_foods.tsv), one per line with English and Polish names.
-
-## Project layout
-
-```
-app/       Android entry point: Application, Activity, launcher icon
-shared/
-  src/commonMain/   Everything shared by Android and desktop
-    data/           Room database, repositories, food catalog, backup format
-    domain/         Pure logic: day status, ghost values, PRs, built-in names, nutrition
-    ui/             Compose screens, theme, icons
-    ui/strings/     All UI text, one implementation per language
-  src/androidMain/  Android file picker, back handling, database setup
-  src/jvmMain/      Desktop window used for preview
-  src/jvmTest/      Unit, migration and UI flow tests
-  schemas/          Room schema history, needed for database migrations
-tools/catalog/      Builds the bundled food catalog from Open Food Facts and USDA data
-```
-
-Built with Kotlin, Compose Multiplatform, Room and kotlinx.serialization.
-
-### Adding a language
-
-Add an entry to `AppLanguage`, then implement `AppStrings` for it. Any text you miss is a compile error. Add translations of the built-in exercise names to `BuiltInNames`; the test suite fails if one is missing.
+`app/` is just the Android entry point. Everything else is in `shared/`: the database, the logic, the screens and the text in both languages, plus a desktop window in `jvmMain` that I used for previewing.
 
 ## License
 
-[MIT](LICENSE) for the code. The bundled food catalog is under the [ODbL](https://opendatacommons.org/licenses/odbl/1-0/), as it contains Open Food Facts data. Font, icon, data and library credits are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The code is under the [MIT license](LICENSE). The food catalog contains data from Open Food Facts and is under the [ODbL](https://opendatacommons.org/licenses/odbl/1-0/). Other credits are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
